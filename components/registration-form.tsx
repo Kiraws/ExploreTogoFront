@@ -94,9 +94,9 @@ export function RegistrationForm() {
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      {/* <CardHeader>
         <CardTitle>Formulaire d&apos;inscription</CardTitle>
-      </CardHeader>
+      </CardHeader> */}
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

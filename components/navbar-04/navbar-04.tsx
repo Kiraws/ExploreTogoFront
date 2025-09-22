@@ -6,9 +6,9 @@ import { NavigationSheet } from "./navigation-sheet";
 const Navbar04Page = () => {
   return (
     <div className="min-h-screen bg-muted">
-      <nav className="fixed top-6 inset-x-4 h-16 bg-background border dark:border-slate-700/70 max-w-screen-xl mx-auto rounded-full">
+      <nav className="fixed top-6 inset-x-4 h-16 bg-background border dark:border-slate-700/70 max-w-screen-xl mx-auto rounded-full bg-black-800/60 backdrop-blur-lg">
         <div className="h-full flex items-center justify-between mx-auto px-4">
-          <Logo />ff
+          <Logo />
 
           {/* Desktop Menu */}
           <NavMenu className="hidden md:block" />

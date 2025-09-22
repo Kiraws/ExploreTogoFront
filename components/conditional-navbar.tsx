@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import { MainNavbar } from "./main-navbar"
 
-const PAGES_WITHOUT_NAVBAR = ["/dashboard"]
+const PAGES_WITHOUT_NAVBAR = ["/dashboard","/login","/register"]
 
 export function ConditionalNavbar({ initialUser }: { initialUser?: any }) {
   const pathname = usePathname()

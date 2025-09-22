@@ -1,0 +1,717 @@
+
+// Fonction pour extraire les coordonnées GPS
+function extractCoordinates(geometry: string) {
+  if (geometry.includes("POINT")) {
+    const match = geometry.match(/POINT\(([^)]+)\)/)
+    if (match) {
+      const [lng, lat] = match[1].split(" ").map(Number)
+      return { lat, lng }
+    }
+  }
+  return null
+}
+
+// Fonction pour reconstruire le chemin d'image
+function reconstructImagePath(image: string | Record<string, string>): string | null {
+  let path: string | null = null
+  if (typeof image === "string") {
+    path = image
+  } else if (typeof image === "object" && image !== null) {
+    path = Object.values(image).join("")
+  }
+  if (!path) return null
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path
+  }
+  if (path.match(/^[A-Z]:\//i)) {
+    const fileName = path.split(/[/\\]/).pop()
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3030"
+    return `${apiBaseUrl}/uploads/lieux/${fileName}`
+  }
+  return `/uploads/${path.replace(/^\/+/, "")}`
+}
+
+// Fonction pour normaliser les jours d'ouverture
+function normalizeOpeningDays(value: unknown): string[] {
+  const canonicalizeDay = (raw: string): string => {
+    const lower = raw.trim().toLowerCase()
+    switch (lower) {
+      case "lundi": return "Lundi"
+      case "mardi": return "Mardi"
+      case "mercredi": return "Mercredi"
+      case "jeudi": return "Jeudi"
+      case "vendredi": return "Vendredi"
+      case "samedi": return "Samedi"
+      case "dimanche": return "Dimanche"
+      default: return raw
+    }
+  }
+
+  if (!value) return []
+  if (Array.isArray(value)) {
+    return value.map((v) => canonicalizeDay(String(v)))
+  }
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((s) => canonicalizeDay(s))
+      .filter((s) => s.length > 0)
+  }
+  if (typeof value === "object" && value !== null) {
+    return Object.values(value)
+      .join(",")
+      .split(",")
+      .map((s) => canonicalizeDay(s))
+      .filter((s) => s.length > 0)
+  }
+  return []
+}
+
+function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
+  const isMobile = useIsMobile()
+  const coordinates = extractCoordinates(lieu.geometry)
+
+  // Définir les champs pertinents par type
+  const fieldsByType = {
+    loisirs: [
+      "regionNom",
+      "prefectureNom",
+      "communeNom",
+      "cantonNom",
+      "etabNom",
+      "description",
+      "etabJour",
+      "type",
+      "geometry",
+      "status",
+      "etablissement_type",
+    ],
+    hotels: [
+      "regionNom",
+      "prefectureNom",
+      "communeNom",
+      "cantonNom",
+      "nomLocalite",
+      "etabNom",
+      "description",
+      "toiletteType",
+      "type",
+      "geometry",
+      "status",
+    ],
+    parcs: [
+      "regionNom",
+      "prefectureNom",
+      "communeNom",
+      "cantonNom",
+      "nomLocalite",
+      "etabNom",
+      "description",
+      "etabJour",
+      "toiletteType",
+      "etabAdresse",
+      "type",
+      "activiteStatut",
+      "activiteCategorie",
+      "geometry",
+      "status",
+      "terrain",
+    ],
+    marches: [
+      "regionNom",
+      "prefectureNom",
+      "communeNom",
+      "cantonNom",
+      "nomLocalite",
+      "etabNom",
+      "description",
+      "etabJour",
+      "type",
+      "geometry",
+      "status",
+      "organisme",
+    ],
+    sites: [
+      "regionNom",
+      "prefectureNom",
+      "communeNom",
+      "cantonNom",
+      "nomLocalite",
+      "etabNom",
+      "description",
+      "etabJour",
+      "etabAdresse",
+      "type",
+      "geometry",
+      "status",
+      "typeSiteDeux",
+      "ministereTutelle",
+      "religion",
+    ],
+    zones: [
+      "regionNom",
+      "prefectureNom",
+      "communeNom",
+      "cantonNom",
+      "nomLocalite",
+      "etabNom",
+      "description",
+      "type",
+      "etabCreationDate",
+      "geometry",
+      "status",
+    ],
+    supermarches: [
+      "regionNom",
+      "prefectureNom",
+      "communeNom",
+      "cantonNom",
+      "nomLocalite",
+      "etabNom",
+      "description",
+      "etabJour",
+      "toiletteType",
+      "etabAdresse",
+      "type",
+      "activiteStatut",
+      "activiteCategorie",
+      "etabCreationDate",
+      "geometry",
+      "status",
+    ],
+    touristique: [
+      "regionNom",
+      "prefectureNom",
+      "communeNom",
+      "cantonNom",
+      "nomLocalite",
+      "etabNom",
+      "description",
+      "etabJour",
+      "etabAdresse",
+      "type",
+      "geometry",
+      "status",
+    ],
+  }
+
+  const openingDays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const
+  const normalizedEtabJour = React.useMemo(() => normalizeOpeningDays(lieu.etabJour), [lieu.etabJour])
+
+  // État du formulaire
+  const [form, setForm] = React.useState<LieuForm>({
+    etabNom: lieu.etabNom || "",
+    type: lieu.type || "",
+    activiteStatut: lieu.activiteStatut || "",
+    regionNom: lieu.regionNom || "",
+    prefectureNom: lieu.prefectureNom || "",
+    communeNom: lieu.communeNom || "",
+    cantonNom: lieu.cantonNom || "",
+    nomLocalite: lieu.nomLocalite || "",
+    etabAdresse: lieu.etabAdresse || "",
+    description: lieu.description || "",
+    etabJour: normalizedEtabJour,
+    toiletteType: lieu.toiletteType || "",
+    etabCreationDate: lieu.etabCreationDate || "",
+    activiteCategorie: lieu.activiteCategorie || "",
+    etablissement_type: lieu.etablissement_type || lieu.loisirs?.etablissementType || "",
+    terrain: lieu.terrain || lieu.parcsJardins?.terrain || "",
+    organisme: lieu.organisme || lieu.marches?.organisme || "",
+    typeSiteDeux: lieu.typeSiteDeux || lieu.sitesNaturels?.typeSiteDeux || "",
+    ministereTutelle: lieu.ministereTutelle || lieu.sitesNaturels?.ministereTutelle || "",
+    religion: lieu.religion || lieu.sitesNaturels?.religion || "",
+  })
+
+  // États pour images
+  const [imagesToDelete, setImagesToDelete] = React.useState<string[]>([])
+  const [replaceImageIndex, setReplaceImageIndex] = React.useState<number | null>(null)
+  const [newImages, setNewImages] = React.useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = React.useState<string[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Gestion des changements texte
+  const onChange = (key: keyof LieuForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [key]: e.target.value }))
+  }
+
+  // Suppression d’image
+  const handleDeleteImage = (image: string | Record<string, string>) => {
+    const imagePath = reconstructImagePath(image)
+    if (!imagePath) return
+    setImagesToDelete((prev) => [...prev, imagePath])
+  }
+
+  // Remplacement d’image
+  const handleReplaceImage = (index: number) => {
+    setReplaceImageIndex(index)
+    fileInputRef.current?.click()
+  }
+
+  // Ajout ou remplacement d’images
+  const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
+    const files = Array.from(e.target.files).filter(
+      (file) =>
+        ["image/jpeg", "image/png", "image/jpg", "image/webp"].includes(file.type) &&
+        file.size < 5 * 1024 * 1024
+    )
+    if (files.length !== e.target.files.length) {
+      alert("Seuls les fichiers JPEG, PNG, JPG ou WebP de moins de 5MB sont acceptés.")
+    }
+
+    if (replaceImageIndex !== null && files.length > 0) {
+      const file = files[0]
+      const preview = URL.createObjectURL(file)
+      setNewImages((prev) => {
+        const copy = [...prev]
+        copy[replaceImageIndex] = file
+        return copy
+      })
+      setImagePreviews((prev) => {
+        const copy = [...prev]
+        copy[replaceImageIndex] = preview
+        return copy
+      })
+      setReplaceImageIndex(null)
+    } else {
+      setNewImages((prev) => [...prev, ...files])
+      const previews = files.map((file) => URL.createObjectURL(file))
+      setImagePreviews((prev) => [...prev, ...previews])
+    }
+  }
+
+  // Nettoyage des previews
+  React.useEffect(() => {
+    return () => {
+      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview))
+    }
+  }, [imagePreviews])
+
+  // Sauvegarde via API PUT
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const formData = new FormData()
+      Object.entries(form).forEach(([key, value]) => {
+        if (key === "etabJour") {
+          (value as string[]).forEach((day) => formData.append("etabJour[]", day))
+        } else {
+          formData.append(key, value as string)
+        }
+      })
+      if (imagesToDelete.length > 0) {
+        formData.append("imagesToDelete", JSON.stringify(imagesToDelete))
+      }
+      if (replaceImageIndex !== null) {
+        formData.append("replaceImageIndex", replaceImageIndex.toString())
+      }
+      newImages.forEach((file) => {
+        formData.append("images", file)
+      })
+      // Ajouter la liste actuelle des images
+      formData.append("etabImages", JSON.stringify(lieu.etabImages))
+
+      console.log("FormData envoyé :", {
+        form,
+        imagesToDelete,
+        replaceImageIndex,
+        newImages: newImages.map((file) => file.name),
+        etabImages: lieu.etabImages,
+      })
+
+      const response = await fetch(buildApiUrl(`/api/lieux/${lieu.id}`), {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Erreur ${response.status}: ${errorData.message || response.statusText}`)
+      }
+
+      const updated = await response.json()
+      console.log("Lieu mis à jour :", updated)
+
+      // Mettre à jour l'état local avec les données renvoyées
+      setForm({
+        etabNom: updated.data.etabNom || "",
+        type: updated.data.type || "",
+        activiteStatut: updated.data.activiteStatut || "",
+        regionNom: updated.data.regionNom || "",
+        prefectureNom: updated.data.prefectureNom || "",
+        communeNom: updated.data.communeNom || "",
+        cantonNom: updated.data.cantonNom || "",
+        nomLocalite: updated.data.nomLocalite || "",
+        etabAdresse: updated.data.etabAdresse || "",
+        description: updated.data.description || "",
+        etabJour: normalizeOpeningDays(updated.data.etabJour) || [],
+        toiletteType: updated.data.toiletteType || "",
+        etabCreationDate: updated.data.etabCreationDate || "",
+        activiteCategorie: updated.data.activiteCategorie || "",
+        etablissement_type: updated.data.etablissement_type || updated.data.loisirs?.etablissementType || "",
+        terrain: updated.data.terrain || updated.data.parcsJardins?.terrain || "",
+        organisme: updated.data.organisme || updated.data.marches?.organisme || "",
+        typeSiteDeux: updated.data.typeSiteDeux || updated.data.sitesNaturels?.typeSiteDeux || "",
+        ministereTutelle: updated.data.ministereTutelle || updated.data.sitesNaturels?.ministereTutelle || "",
+        religion: updated.data.religion || updated.data.sitesNaturels?.religion || "",
+      })
+
+      // Mettre à jour les images dans l'objet lieu
+      lieu.etabImages = updated.data.etabImages || []
+
+      // Réinitialiser les états
+      setImagesToDelete([])
+      setNewImages([])
+      setImagePreviews([])
+      setReplaceImageIndex(null)
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour :", err)
+      alert("Une erreur est survenue lors de la mise à jour du lieu.")
+    }
+  }
+
+  const relevantFields = fieldsByType[lieu.type as keyof typeof fieldsByType] || fieldsByType.loisirs
+  const shouldShowField = (fieldName: string) => relevantFields.includes(fieldName)
+
+  return (
+    <Drawer direction={isMobile ? "bottom" : "right"}>
+      <DrawerTrigger asChild>
+        <Button variant="link" className="text-foreground w-fit px-0 text-left">
+          {lieu.etabNom}
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent className="overflow-y-auto overflow-x-hidden">
+        <DrawerHeader>
+          <DrawerTitle>Modifier le lieu</DrawerTitle>
+          <DrawerDescription>Mettre à jour les informations du lieu</DrawerDescription>
+        </DrawerHeader>
+
+        {/* Gestion des images */}
+        {lieu.etabImages && lieu.etabImages.length > 0 && (
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-sm font-medium">Images du lieu</Label>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 w-8 p-0 bg-transparent"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <IconPlus className="h-4 w-4" />
+              </Button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/jpeg,image/png,image/jpg,image/webp"
+                multiple
+                className="hidden"
+                onChange={handleAddImages}
+              />
+            </div>
+
+            <div className="relative">
+              <div className="overflow-hidden rounded-lg border">
+                <div
+                  className="flex transition-transform duration-300"
+                  style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+                >
+                  {lieu.etabImages.map((imageObj, index) => {
+                    const imagePath = reconstructImagePath(imageObj)
+                    return (
+                      <div key={index} className="w-full flex-shrink-0 relative aspect-video">
+                        <Image
+                          src={imagePath || '/placeholder.svg'}
+                          alt={`Image ${index + 1}`}
+                          fill
+                          className="object-contain"
+                        />
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 w-8 p-0 bg-black/50"
+                            onClick={() => handleReplaceImage(index)}
+                          >
+                            <IconEdit className="h-3 w-3 text-white" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 w-8 p-0 bg-black/50"
+                            onClick={() => handleDeleteImage(imageObj)}
+                          >
+                            <IconTrash className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              {lieu.etabImages.length > 1 && (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute left-2 top agrav;1/2 -translate-y-1/2 h-8 w-8 p-0 bg-black/50"
+                    onClick={() => setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : prev))}
+                    disabled={currentImageIndex === 0}
+                  >
+                    <IconChevronLeft className="h-4 w-4 text-white" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 bg-black/50"
+                    onClick={() => setCurrentImageIndex((prev) => (prev < lieu.etabImages.length - 1 ? prev + 1 : prev))}
+                    disabled={currentImageIndex === lieu.etabImages.length - 1}
+                  >
+                    <IconChevronRight className="h-4 w-4 text-white" />
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {imagesToDelete.length > 0 && (
+              <div className="mt-2">
+                <Label className="text-sm font-medium">Images marquées pour suppression :</Label>
+                <ul className="list-disc pl-5 text-sm">
+                  {imagesToDelete.map((img, i) => (
+                    <li key={i}>{img}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {imagePreviews.length > 0 && (
+              <div className="mt-2">
+                <Label className="text-sm font-medium">Nouvelles images :</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative aspect-video border rounded-lg overflow-hidden">
+                      <Image src={preview} alt={`Preview ${index + 1}`} fill className="object-cover" />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={() => {
+                          const newPrevs = imagePreviews.filter((_, i) => i !== index)
+                          const newFiles = newImages.filter((_, i) => i !== index)
+                          setImagePreviews(newPrevs)
+                          setNewImages(newFiles)
+                          URL.revokeObjectURL(preview)
+                        }}
+                      >
+                        <IconX className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Formulaire des autres champs */}
+        <div className="flex flex-col gap-4 px-4 text-sm">
+          <div className="grid gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="etabNom">Nom de l&apos;établissement</Label>
+              <Input id="etabNom" value={form.etabNom} onChange={onChange('etabNom')} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="type">Type</Label>
+              <Select defaultValue={form.type} onValueChange={(v) => setForm((p) => ({ ...p, type: v }))}>
+                <SelectTrigger id="type" className="w-full">
+                  <SelectValue placeholder="Sélectionner un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hotels">Hôtels</SelectItem>
+                  <SelectItem value="supermarches">Supermarchés</SelectItem>
+                  <SelectItem value="parcs">Parcs & Jardins</SelectItem>
+                  <SelectItem value="loisirs">Loisirs</SelectItem>
+                  <SelectItem value="marches">Marchés</SelectItem>
+                  <SelectItem value="sites">Sites Naturels</SelectItem>
+                  <SelectItem value="zones">Zones Protégées</SelectItem>
+                  <SelectItem value="touristique">Touristique</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="regionNom">Région</Label>
+                <Input id="regionNom" value={form.regionNom} onChange={onChange('regionNom')} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="prefectureNom">Préfecture</Label>
+                <Input id="prefectureNom" value={form.prefectureNom} onChange={onChange('prefectureNom')} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="communeNom">Commune</Label>
+                <Input id="communeNom" value={form.communeNom} onChange={onChange('communeNom')} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="cantonNom">Canton</Label>
+                <Input id="cantonNom" value={form.cantonNom} onChange={onChange('cantonNom')} />
+              </div>
+            </div>
+            {shouldShowField('nomLocalite') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="nomLocalite">Localité</Label>
+                <Input id="nomLocalite" value={form.nomLocalite} onChange={onChange('nomLocalite')} />
+              </div>
+            )}
+            {shouldShowField('etabAdresse') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="etabAdresse">Adresse</Label>
+                <Input id="etabAdresse" value={form.etabAdresse} onChange={onChange('etabAdresse')} />
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Input id="description" value={form.description} onChange={onChange('description')} />
+            </div>
+            {shouldShowField('etabJour') && (
+              <div className="flex flex-col gap-2">
+                <Label>Jours d&apos;ouverture</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {openingDays.map((day) => (
+                    <div key={day} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`day-${day}`}
+                        checked={form.etabJour.includes(day)}
+                        onCheckedChange={(checked) => {
+                          setForm((prev) => ({
+                            ...prev,
+                            etabJour: checked
+                              ? [...prev.etabJour, day]
+                              : prev.etabJour.filter((d) => d !== day),
+                          }))
+                        }}
+                      />
+                      <Label htmlFor={`day-${day}`}>{day}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {shouldShowField('toiletteType') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="toiletteType">Type de toilettes</Label>
+                <Input id="toiletteType" value={form.toiletteType} onChange={onChange('toiletteType')} />
+              </div>
+            )}
+            {shouldShowField('activiteStatut') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="activiteStatut">Statut d&apos;activité</Label>
+                <Select
+                  value={form.activiteStatut}
+                  onValueChange={(value) => setForm((prev) => ({ ...prev, activiteStatut: value }))}
+                >
+                  <SelectTrigger id="activiteStatut">
+                    <SelectValue placeholder="Sélectionner un statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="En activité">En activité</SelectItem>
+                    <SelectItem value="En rénovation">En rénovation</SelectItem>
+                    <SelectItem value="Fermé">Fermé</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {shouldShowField('activiteCategorie') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="activiteCategorie">Catégorie d&apos;activité</Label>
+                <Input
+                  id="activiteCategorie"
+                  value={form.activiteCategorie}
+                  onChange={onChange('activiteCategorie')}
+                />
+              </div>
+            )}
+            {shouldShowField('etabCreationDate') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="etabCreationDate">Date de création</Label>
+                <Input
+                  id="etabCreationDate"
+                  value={form.etabCreationDate}
+                  onChange={onChange('etabCreationDate')}
+                />
+              </div>
+            )}
+            {shouldShowField('etablissement_type') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="etablissement_type">Type d&apos;établissement</Label>
+                <Input
+                  id="etablissement_type"
+                  value={form.etablissement_type}
+                  onChange={onChange('etablissement_type')}
+                />
+              </div>
+            )}
+            {shouldShowField('terrain') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="terrain">Terrain</Label>
+                <Input id="terrain" value={form.terrain} onChange={onChange('terrain')} />
+              </div>
+            )}
+            {shouldShowField('organisme') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="organisme">Organisme</Label>
+                <Input id="organisme" value={form.organisme} onChange={onChange('organisme')} />
+              </div>
+            )}
+            {shouldShowField('typeSiteDeux') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="typeSiteDeux">Type de site</Label>
+                <Input id="typeSiteDeux" value={form.typeSiteDeux} onChange={onChange('typeSiteDeux')} />
+              </div>
+            )}
+            {shouldShowField('ministereTutelle') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="ministereTutelle">Ministère de tutelle</Label>
+                <Input
+                  id="ministereTutelle"
+                  value={form.ministereTutelle}
+                  onChange={onChange('ministereTutelle')}
+                />
+              </div>
+            )}
+            {shouldShowField('religion') && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="religion">Religion</Label>
+                <Input id="religion" value={form.religion} onChange={onChange('religion')} />
+              </div>
+            )}
+            {coordinates && (
+              <div className="flex flex-col gap-2">
+                <Label>Coordonnées GPS</Label>
+                <div className="flex gap-4">
+                  <div>
+                    <span className="text-muted-foreground">Latitude: </span>
+                    {coordinates.lat}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Longitude: </span>
+                    {coordinates.lng}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DrawerFooter>
+          <Button onClick={handleSave}>Enregistrer</Button>
+          <DrawerClose asChild>
+            <Button variant="outline">Annuler</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  )
+}

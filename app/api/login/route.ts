@@ -21,7 +21,11 @@ export async function POST(req: Request) {
 			return NextResponse.json({ message: "Token manquant dans la réponse." }, { status: 500 });
 		}
 
-		const response = NextResponse.json({ success: true, user: data.user ?? null });
+		const response = NextResponse.json({ 
+			success: true,
+			user: data.user ?? null,
+			token:accessToken 
+		});
 		
 		// Stocker le token d'authentification
 		response.cookies.set("token", accessToken, {

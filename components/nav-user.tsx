@@ -29,18 +29,43 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+
+interface SessionUser {
+  id?: string
+  name?: string
+  firstname?: string
+  role?: string
+  email?: string
+  avatar?: string
+}
 
 export function NavUser({
   user,
 }: {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
+  user?: SessionUser
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(user ?? null)
+
+  useEffect(() => {
+    try {
+      const cookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("userData="))
+        ?.split("=")[1]
+      if (!cookie) {
+        setSessionUser(null)
+        return
+      }
+      const parsed = JSON.parse(decodeURIComponent(cookie))
+      setSessionUser(parsed || null)
+    } catch {
+      setSessionUser(null)
+    }
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -52,6 +77,9 @@ export function NavUser({
     }
   }
 
+  const displayName = sessionUser?.firstname || sessionUser?.name || "Invité"
+  const displayEmail = sessionUser?.email || ""
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -62,13 +90,15 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                {sessionUser?.avatar ? (
+                  <AvatarImage src={sessionUser.avatar} alt={displayName} />
+                ) : null}
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
+                <span className="truncate font-medium">{displayName}</span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {user.email}
+                  {displayEmail}
                 </span>
               </div>
               <IconDotsVertical className="ml-auto size-4" />
@@ -83,37 +113,48 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  {sessionUser?.avatar ? (
+                    <AvatarImage src={sessionUser.avatar} alt={displayName} />
+                  ) : null}
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <span className="truncate font-medium">{displayName}</span>
                   <span className="text-muted-foreground truncate text-xs">
-                    {user.email}
+                    {displayEmail}
                   </span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
+            {sessionUser ? (
+              <>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem>
+                    <IconUserCircle />
+                    Account
+                  </DropdownMenuItem>
+                  {/* <DropdownMenuItem>
+                    <IconCreditCard />
+                    Billing
+                  </DropdownMenuItem> */}
+                  <DropdownMenuItem>
+                    <IconNotification />
+                    Notifications
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <IconLogout />
+                  Log out
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <DropdownMenuItem onClick={() => router.push("/login")}>
                 <IconUserCircle />
-                Account
+                Se connecter
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <IconLogout />
-              Log out
-            </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

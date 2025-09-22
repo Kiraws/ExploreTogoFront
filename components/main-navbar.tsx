@@ -67,7 +67,7 @@ export function MainNavbar({ initialUser }: { initialUser?: SessionUser | null }
         <div className="flex items-center gap-3">
           {/* Theme Selector et Mode Toggle */}
           <div className="flex items-center gap-2">
-            <ThemeSelector />
+            {/* <ThemeSelector /> */}
             <ModeToggle />
           </div>
 

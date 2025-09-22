@@ -6,22 +6,22 @@ import { ActiveThemeProvider } from "@/components/active-theme"
 import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
 import { ConditionalNavbar } from "@/components/conditional-navbar";
+import { Toaster } from "@/components/ui/sonner"
 
+// const META_THEME_COLORS = {
+//   light: "#ffffff",
+//   dark: "#09090b",
+// }
 
-const META_THEME_COLORS = {
-  light: "#ffffff",
-  dark: "#09090b",
-}
+// const geistSans = Geist({
+//   variable: "--font-geist-sans",
+//   subsets: ["latin"],
+// });
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// const geistMono = Geist_Mono({
+//   variable: "--font-geist-mono",
+//   subsets: ["latin"],
+// });
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -75,6 +75,7 @@ export default async function RootLayout({
               <ConditionalNavbar initialUser={initialUser} />
               <main className="">
                 {children}
+                <Toaster />
               </main>
             </ActiveThemeProvider>
           </ThemeProvider>

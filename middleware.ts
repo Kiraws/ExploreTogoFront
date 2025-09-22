@@ -86,11 +86,11 @@ export function middleware(req: NextRequest) {
   }
 
   // Définir les pages autorisées par rôle (configurable ici)
-  const userPages = ["/", "/profile", "/user/settings"]; // Exemples pour rôle "user" - ajoute tes pages
+  const userPages = ["/", "/profil","/explore", "/user/settings","/no-image.png"]; // Exemples pour rôle "user" - ajoute tes pages
   const adminPages = ["/dashboard", "/admin/users", "/admin/products"]; // Exemples pour rôle "admin" - ajoute tes pages
 
   // Logique de redirection basée sur rôle, similaire à NextAuth
-  if (role === "user") {
+  if (role === "utilisateur") {
     // User ne peut pas accéder à /dashboard ni à ses sous-pages
     if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
       console.log("User essaie d'accéder à une page admin, redirection vers /");
@@ -145,7 +145,7 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Exclure les fichiers statiques et API routes
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    // On exclut les assets statiques (_next, favicon, images du dossier public, etc.)
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)).*)',
   ],
 };

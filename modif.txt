@@ -1,0 +1,426 @@
+
+
+
+
+
+
+
+// ... existing code ...
+
+export function DataTable({
+  data: initialData,
+}: {
+  data: Lieu[]
+}) {
+  const [data, setData] = React.useState(() => initialData)
+  const [showAddModal, setShowAddModal] = React.useState(false)
+  // ... existing state ...
+
+  return (
+    <Tabs defaultValue="lieux" className="w-full flex-col justify-start gap-6">
+      <div className="flex items-center justify-between px-4 lg:px-6">
+        {/* ... existing code ... */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)}>
+            <IconPlus />
+            <span className="hidden lg:inline">Ajouter un lieu</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* ... existing TabsContent ... */}
+
+      {/* Modal d'ajout de lieu */}
+      {showAddModal && (
+        <AddLieuModal 
+          isOpen={showAddModal} 
+          onClose={() => setShowAddModal(false)}
+          onAdd={(newLieu) => {
+            setData([...data, newLieu])
+            setShowAddModal(false)
+          }}
+        />
+      )}
+    </Tabs>
+  )
+}
+
+// Composant modal d'ajout de lieu
+function AddLieuModal({ isOpen, onClose, onAdd }: { 
+  isOpen: boolean
+  onClose: () => void
+  onAdd: (lieu: Partial<Lieu>) => void
+}) {
+  const [selectedType, setSelectedType] = React.useState("loisirs")
+  const [form, setForm] = React.useState({
+    etabNom: "",
+    type: "loisirs",
+    regionNom: "",
+    prefectureNom: "",
+    communeNom: "",
+    cantonNom: "",
+    nomLocalite: "",
+    etabAdresse: "",
+    description: "",
+    etabJour: [] as string[],
+    toiletteType: "",
+    etabCreationDate: "",
+    activiteStatut: "",
+    activiteCategorie: "",
+    etablissementType: "",
+    terrain: "",
+    organisme: "",
+    typeSiteDeux: "",
+    ministereTutelle: "",
+    religion: "",
+  })
+
+  // Définir les champs pertinents par type (même logique que dans LieuDetailsViewer)
+  const fieldsByType = {
+    loisirs: [
+      "regionNom", "prefectureNom", "communeNom", "cantonNom", "etabNom", "description", "etabJour",
+      "etabAdresse", "type", "etablissementType"
+    ],
+    hotels: [
+      "regionNom", "prefectureNom", "communeNom", "cantonNom", "nomLocalite", "etabNom", "description",
+      "toiletteType", "type"
+    ],
+    parcs: [
+      "regionNom", "prefectureNom", "communeNom", "cantonNom", "nomLocalite", "etabNom", "description",
+      "etabJour", "toiletteType", "etabAdresse", "type", "activiteStatut", "activiteCategorie", "terrain"
+    ],
+    marches: [
+      "regionNom", "prefectureNom", "communeNom", "cantonNom", "nomLocalite", "etabNom", "description",
+      "etabJour", "type", "organisme"
+    ],
+    sites: [
+      "regionNom", "prefectureNom", "communeNom", "cantonNom", "nomLocalite", "etabNom", "description",
+      "etabJour", "etabAdresse", "type", "typeSiteDeux", "ministereTutelle", "religion"
+    ],
+    zones: [
+      "regionNom", "prefectureNom", "communeNom", "cantonNom", "nomLocalite", "etabNom", "description",
+      "type", "etabCreationDate"
+    ],
+    supermarches: [
+      "regionNom", "prefectureNom", "communeNom", "cantonNom", "nomLocalite", "etabNom", "description",
+      "etabJour", "toiletteType", "etabAdresse", "type", "activiteStatut", "activiteCategorie", "etabCreationDate"
+    ],
+    touristique: [
+      "regionNom", "prefectureNom", "communeNom", "cantonNom", "nomLocalite", "etabNom", "description",
+      "etabJour", "etabAdresse", "type"
+    ],
+  }
+
+  // Obtenir les champs pertinents pour le type sélectionné
+  const relevantFields = fieldsByType[selectedType as keyof typeof fieldsByType] || fieldsByType.loisirs
+
+  // Fonction pour vérifier si un champ doit être affiché
+  const shouldShowField = (fieldName: string) => relevantFields.includes(fieldName)
+
+  // Mettre à jour le type et réinitialiser les champs spécifiques
+  const handleTypeChange = (newType: string) => {
+    setSelectedType(newType)
+    setForm(prev => ({ ...prev, type: newType }))
+    
+    // Réinitialiser les champs spécifiques au type
+    const fieldsToReset = [
+      'etablissementType', 'terrain', 'organisme', 'typeSiteDeux', 
+      'ministereTutelle', 'religion', 'activiteStatut', 'activiteCategorie'
+    ]
+    
+    const resetForm = { ...prev, type: newType }
+    fieldsToReset.forEach(field => {
+      if (resetForm[field as keyof typeof resetForm]) {
+        resetForm[field as keyof typeof resetForm] = ""
+      }
+    })
+    
+    setForm(resetForm)
+  }
+
+  const onChange = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [key]: e.target.value }))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onAdd(form)
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Ajouter un nouveau lieu</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            ✕
+          </Button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Type - toujours affiché en premier */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="type">Type de lieu *</Label>
+            <Select value={selectedType} onValueChange={handleTypeChange}>
+              <SelectTrigger id="type" className="w-full">
+                <SelectValue placeholder="Sélectionner un type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="loisirs">Loisirs</SelectItem>
+                <SelectItem value="hotels">Hôtels</SelectItem>
+                <SelectItem value="supermarches">Supermarchés</SelectItem>
+                <SelectItem value="parcs">Parcs & Jardins</SelectItem>
+                <SelectItem value="marches">Marchés</SelectItem>
+                <SelectItem value="sites">Sites Naturels</SelectItem>
+                <SelectItem value="zones">Zones Protégées</SelectItem>
+                <SelectItem value="touristique">Touristique</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Nom de l'établissement - toujours affiché */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="etabNom">Nom de l'établissement *</Label>
+            <Input 
+              id="etabNom" 
+              value={form.etabNom} 
+              onChange={onChange("etabNom")} 
+              required 
+            />
+          </div>
+
+          {/* Champs géographiques - toujours affichés */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="regionNom">Région *</Label>
+              <Input 
+                id="regionNom" 
+                value={form.regionNom} 
+                onChange={onChange("regionNom")} 
+                required 
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="prefectureNom">Préfecture *</Label>
+              <Input 
+                id="prefectureNom" 
+                value={form.prefectureNom} 
+                onChange={onChange("prefectureNom")} 
+                required 
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="communeNom">Commune *</Label>
+              <Input 
+                id="communeNom" 
+                value={form.communeNom} 
+                onChange={onChange("communeNom")} 
+                required 
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="cantonNom">Canton *</Label>
+              <Input 
+                id="cantonNom" 
+                value={form.cantonNom} 
+                onChange={onChange("cantonNom")} 
+                required 
+              />
+            </div>
+          </div>
+
+          {/* Localité - affiché selon le type */}
+          {shouldShowField("nomLocalite") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="nomLocalite">Localité</Label>
+              <Input 
+                id="nomLocalite" 
+                value={form.nomLocalite} 
+                onChange={onChange("nomLocalite")} 
+              />
+            </div>
+          )}
+
+          {/* Adresse - affiché selon le type */}
+          {shouldShowField("etabAdresse") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="etabAdresse">Adresse</Label>
+              <Input 
+                id="etabAdresse" 
+                value={form.etabAdresse} 
+                onChange={onChange("etabAdresse")} 
+              />
+            </div>
+          )}
+
+          {/* Description - toujours affichée */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Input 
+              id="description" 
+              value={form.description} 
+              onChange={onChange("description")} 
+            />
+          </div>
+
+          {/* Jours d'ouverture - affiché selon le type */}
+          {shouldShowField("etabJour") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="etabJour">Jours d'ouverture (séparés par des virgules)</Label>
+              <Input
+                id="etabJour"
+                value={form.etabJour.join(", ")}
+                onChange={(e) => setForm((p) => ({ 
+                  ...p, 
+                  etabJour: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) 
+                }))}
+                placeholder="Lundi, Mardi, Mercredi"
+              />
+            </div>
+          )}
+
+          {/* Type de toilettes - affiché selon le type */}
+          {shouldShowField("toiletteType") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="toiletteType">Type de toilettes</Label>
+              <Input 
+                id="toiletteType" 
+                value={form.toiletteType} 
+                onChange={onChange("toiletteType")} 
+              />
+            </div>
+          )}
+
+          {/* Statut d'activité - affiché selon le type */}
+          {shouldShowField("activiteStatut") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="activiteStatut">Statut d'activité</Label>
+              <Select
+                value={form.activiteStatut}
+                onValueChange={(v) => setForm((p) => ({ ...p, activiteStatut: v }))}
+              >
+                <SelectTrigger id="activiteStatut" className="w-full">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="En activité">En activité</SelectItem>
+                  <SelectItem value="En rénovation">En rénovation</SelectItem>
+                  <SelectItem value="Fermé">Fermé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Catégorie d'activité - affiché selon le type */}
+          {shouldShowField("activiteCategorie") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="activiteCategorie">Catégorie d'activité</Label>
+              <Input 
+                id="activiteCategorie" 
+                value={form.activiteCategorie} 
+                onChange={onChange("activiteCategorie")} 
+              />
+            </div>
+          )}
+
+          {/* Date de création - affiché selon le type */}
+          {shouldShowField("etabCreationDate") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="etabCreationDate">Date de création</Label>
+              <Input 
+                id="etabCreationDate" 
+                value={form.etabCreationDate} 
+                onChange={onChange("etabCreationDate")} 
+                placeholder="2024-01-01"
+              />
+            </div>
+          )}
+
+          {/* Type d'établissement pour loisirs */}
+          {shouldShowField("etablissementType") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="etablissementType">Type d'établissement</Label>
+              <Input 
+                id="etablissementType" 
+                value={form.etablissementType} 
+                onChange={onChange("etablissementType")} 
+              />
+            </div>
+          )}
+
+          {/* Terrain pour parcs */}
+          {shouldShowField("terrain") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="terrain">Terrain</Label>
+              <Input 
+                id="terrain" 
+                value={form.terrain} 
+                onChange={onChange("terrain")} 
+              />
+            </div>
+          )}
+
+          {/* Organisme pour marchés */}
+          {shouldShowField("organisme") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="organisme">Organisme</Label>
+              <Input 
+                id="organisme" 
+                value={form.organisme} 
+                onChange={onChange("organisme")} 
+              />
+            </div>
+          )}
+
+          {/* Type de site pour sites naturels */}
+          {shouldShowField("typeSiteDeux") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="typeSiteDeux">Type de site</Label>
+              <Input 
+                id="typeSiteDeux" 
+                value={form.typeSiteDeux} 
+                onChange={onChange("typeSiteDeux")} 
+              />
+            </div>
+          )}
+
+          {/* Ministère de tutelle pour sites naturels */}
+          {shouldShowField("ministereTutelle") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="ministereTutelle">Ministère de tutelle</Label>
+              <Input 
+                id="ministereTutelle" 
+                value={form.ministereTutelle} 
+                onChange={onChange("ministereTutelle")} 
+              />
+            </div>
+          )}
+
+          {/* Religion pour sites naturels */}
+          {shouldShowField("religion") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="religion">Religion</Label>
+              <Input 
+                id="religion" 
+                value={form.religion} 
+                onChange={onChange("religion")} 
+              />
+            </div>
+          )}
+
+          {/* Boutons d'action */}
+          <div className="flex justify-end gap-3 pt-6 border-t">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button type="submit">
+              Ajouter le lieu
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}

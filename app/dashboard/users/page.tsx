@@ -1,24 +1,24 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { DataTable, Lieu } from "@/components/data-table"
-import { LieuxStatsChart } from "@/components/LieuxStatsChart"
+import { UserDataTable, User } from "@/components/UserDataTable"
 import { buildApiUrl } from "@/lib/config"
 
-export default function LieuxPage() {
-  const [lieux, setLieux] = useState<Lieu[]>([])
+export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchLieux = async () => {
+    const fetchUsers = async () => {
       try {
-        const response = await fetch(buildApiUrl('/api/lieux'), {
+        const response = await fetch(buildApiUrl('/api/users'), {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token") || ''}`,
           },
         })
 
+        // Vérifier le type de contenu
         const contentType = response.headers.get("content-type")
         if (!contentType || !contentType.includes("application/json")) {
           const text = await response.text()
@@ -32,21 +32,21 @@ export default function LieuxPage() {
 
         const result = await response.json()
         
-        if (result.success) {
-          console.log('API Response:', result.data)
-          setLieux(result.data)
+        if (result.status === "Succès") {
+          console.log('API Response:', result.data) // Debug log
+          setUsers(result.data)
         } else {
           throw new Error(result.message || "Erreur lors de la récupération des données")
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue")
-        console.error("Erreur fetchLieux:", err)
+        console.error("Erreur fetchUsers:", err)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchLieux()
+    fetchUsers()
   }, [])
 
   if (loading) {
@@ -54,7 +54,7 @@ export default function LieuxPage() {
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">Chargement des lieux...</div>
+            <div className="text-muted-foreground">Chargement des utilisateurs...</div>
           </div>
         </div>
       </div>
@@ -77,10 +77,7 @@ export default function LieuxPage() {
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
-            <LieuxStatsChart lieux={lieux} />
-          </div>
-          <DataTable data={lieux} />
+          <UserDataTable data={users} />
         </div>
       </div>
     </div>

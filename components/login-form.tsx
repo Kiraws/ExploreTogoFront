@@ -76,7 +76,17 @@ export function LoginForm() {
         } else {
           setError(data?.message || "Erreur lors de la connexion")
         }
+        
+        
         return
+      }
+      // ✅ Stocker le token si présent
+      if (data?.token) {
+        console.log("Token trouvé: ", data.token)
+        localStorage.setItem("token", data.token)
+        console.log("Token enregistré dans localStorage !")
+      } else {
+        console.warn("Pas de token dans la réponse:", data)
       }
 
       console.log("Connexion réussie, redirection...")
@@ -97,9 +107,9 @@ export function LoginForm() {
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      {/* <CardHeader>
         <CardTitle>Se connecter</CardTitle>
-      </CardHeader>
+      </CardHeader> */}
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
