@@ -14,7 +14,7 @@ export const NavigationSheet = () => {
       </SheetTrigger>
       <SheetContent>
         <Logo />
-        <NavMenu orientation="vertical" className="mt-12" />
+        <NavMenu orientation="vertical" className="mt-12 " />
       </SheetContent>
     </Sheet>
   );

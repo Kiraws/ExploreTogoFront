@@ -1,5 +1,6 @@
 "use client"
 import * as React from "react"
+import { toast } from "sonner"
 import { useState, useMemo} from "react"
 import {
   closestCenter,
@@ -465,38 +466,24 @@ function AddLieuForm({ onAdd, onOpenChange }: { onAdd: (newLieu: Lieu) => void, 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      const validFiles = Array.from(files).filter(file => 
-        ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type) && file.size < 5 * 1024 * 1024
-      )
-      if (validFiles.length !== files.length) {
-        alert('Seuls les fichiers JPEG, PNG, JPG ou WebP de moins de 5MB sont acceptés.')
-      }
-      setForm(prev => ({ ...prev, etabImages: validFiles }))
-      const previews = validFiles.map(file => URL.createObjectURL(file))
-      setImagePreviews(previews)
+    const validFiles = Array.from(files).filter(file =>
+    ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type) && file.size < 5 * 1024 * 1024
+    )
+    if (validFiles.length !== files.length) {
+    toast.error("Seuls les fichiers JPEG, PNG, JPG ou WebP de moins de 5MB sont acceptés.")
     }
-  }
-
-  React.useEffect(() => {
-    return () => {
-      imagePreviews.forEach(preview => URL.revokeObjectURL(preview))
+    setForm(prev => ({ ...prev, etabImages: validFiles }))
+    const previews = validFiles.map(file => URL.createObjectURL(file))
+    setImagePreviews(previews)
     }
-  }, [imagePreviews])
-
-  const handleDayChange = (day: string, checked: boolean) => {
-    setForm((prevForm) => {
-      const currentDays = prevForm.etabJour || []
-      const newDays = checked
-        ? [...currentDays, day]
-        : currentDays.filter((d) => d !== day)
-      return { ...prevForm, etabJour: newDays }
-    })
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+    }
+    
+    
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     const formData = new FormData()
+    // ... construction du formData ...*
     formData.append("etabNom", form.etabNom)
     formData.append("type", form.type)
     formData.append("regionNom", form.regionNom)
@@ -523,27 +510,47 @@ function AddLieuForm({ onAdd, onOpenChange }: { onAdd: (newLieu: Lieu) => void, 
     }
     formData.append("status", "true")
     try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(buildApiUrl("/api/lieux"), {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      })
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(`Erreur ${response.status}: ${errorData.message || response.statusText}`)
-      }
-      const result = await response.json()
-      onAdd(result.data)
-      onOpenChange(false)
-      setForm(initialFormState)
-      setImagePreviews([])
-    } catch (error: unknown) {
-      console.error("Erreur lors de la création du lieu:", error)
-    } finally {
-      setIsSubmitting(false)
+    const token = localStorage.getItem("token")
+    const response = await fetch(buildApiUrl("/api/lieux"), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+    })
+    if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(`Erreur ${response.status}: ${errorData.message || response.statusText}`)
     }
+    const result = await response.json()
+    onAdd(result.data)
+    onOpenChange(false)
+    setForm(initialFormState)
+    setImagePreviews([])
+    toast.success("Lieu ajouté avec succès !")
+    } catch (error: unknown) {
+    toast.error("Erreur lors de la création du lieu.")
+    console.error(error)
+    } finally {
+    setIsSubmitting(false)
+    }
+    }
+
+  React.useEffect(() => {
+    return () => {
+      imagePreviews.forEach(preview => URL.revokeObjectURL(preview))
+    }
+  }, [imagePreviews])
+
+  const handleDayChange = (day: string, checked: boolean) => {
+    setForm((prevForm) => {
+      const currentDays = prevForm.etabJour || []
+      const newDays = checked
+        ? [...currentDays, day]
+        : currentDays.filter((d) => d !== day)
+      return { ...prevForm, etabJour: newDays }
+    })
   }
+
+
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -856,29 +863,25 @@ const columns: ColumnDef<Lieu>[] = [
           <DropdownMenuItem
             className="text-destructive"
             onSelect={async () => {
-              try {
-                const token = localStorage.getItem("token")
-                const response = await fetch(buildApiUrl(`/api/lieux/${row.original.id}/desactivate`), {
-                  method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                  },
-                })                
-
-              if (!response.ok) {
-              throw new Error(`Erreur ${response.status}`)
-              }
-
-              // Optionnel : mettre à jour l’état local après désactivation
-                console.log(`Lieu ${row.original.id} désactivé avec succès`)
-              } catch (err) {
-               console.error("Erreur lors de la désactivation :", err)
-                }
-              }}
-              >
-              <IconTrash className="mr-2 size-4" />
-              Supprimer
+            try {
+            const token = localStorage.getItem("token")
+            const response = await fetch(buildApiUrl(`/api/lieux/${row.original.id}/desactivate`), {
+            method: "PATCH",
+            headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            },
+            })
+            if (!response.ok) throw new Error(`Erreur ${response.status}`)
+            toast.success("Lieu désactivé avec succès.")
+            } catch (err) {
+            toast.error("Erreur lors de la désactivation.")
+            console.error(err)
+            }
+            }}
+            >
+            <IconTrash className="mr-2 size-4" />
+            Supprimer
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -913,6 +916,7 @@ function DataTableContent({ data }: { data: Lieu[] }) {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState("")
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
@@ -1058,16 +1062,28 @@ export function DataTable({ data: initialData }: { data: Lieu[] }) {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState("")
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
   })
+
   const sortableId = React.useId()
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor), useSensor(KeyboardSensor))
-  const dataIds = useMemo<UniqueIdentifier[]>(
-    () => data.map(({ id }) => id),
-    [data]
-  )
+  const dataIds = useMemo<UniqueIdentifier[]>(() => data.map(({ id }) => id), [data])
+
+  // ✅ Déclare GlobalFilter ici
+  function GlobalFilter({ globalFilter, setGlobalFilter }: { globalFilter: string; setGlobalFilter: (value: string) => void }) {
+    return (
+      <Input
+        placeholder="Rechercher un lieu..."
+        value={globalFilter ?? ""}
+        onChange={(e) => setGlobalFilter(e.target.value)}
+        className="max-w-sm"
+      />
+    )
+  }
+
   const table = useReactTable({
     data,
     columns,
@@ -1077,6 +1093,7 @@ export function DataTable({ data: initialData }: { data: Lieu[] }) {
       rowSelection,
       columnFilters,
       pagination,
+      globalFilter, // ✅ Ajoute ici
     },
     getRowId: (row) => row.id,
     enableRowSelection: true,
@@ -1085,13 +1102,17 @@ export function DataTable({ data: initialData }: { data: Lieu[] }) {
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
+    onGlobalFilterChange: setGlobalFilter, // ✅ Ajoute ici
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    getFilteredRowModel: getFilteredRowModel(), // ✅ Une seule fois
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+
+
+ 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (active && over && active.id !== over.id) {
@@ -1108,6 +1129,10 @@ export function DataTable({ data: initialData }: { data: Lieu[] }) {
   return (
     <>
       <Tabs defaultValue="lieux" className="w-full flex-col justify-start gap-6">
+        {/* Add search bar above everything */}
+        <div className="px-4 lg:px-6">
+          <GlobalFilter globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+        </div>
         <div className="flex items-center justify-between px-4 lg:px-6">
           <Label htmlFor="view-selector" className="sr-only">Vue</Label>
           <Select defaultValue="lieux">
@@ -1131,12 +1156,13 @@ export function DataTable({ data: initialData }: { data: Lieu[] }) {
             <TabsTrigger value="zones">Zones Protégées</TabsTrigger>
             <TabsTrigger value="touristique">Touristique</TabsTrigger>
           </TabsList>
-          <div className="flex items-center gap-2">
+         <div className="flex items-center gap-2">
+            <GlobalFilter globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
             <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)}>
               <IconPlus />
               <span className="hidden lg:inline">Ajouter un lieu</span>
             </Button>
-          </div>
+        </div>
         </div>
       
         <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
@@ -1354,6 +1380,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       "communeNom",
       "cantonNom",
       "etabNom",
+      "etabAdresse",
       "description",
       "etabJour",
       "type",
@@ -1368,6 +1395,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       "cantonNom",
       "nomLocalite",
       "etabNom",
+      "etabAdresse",
       "description",
       "toiletteType",
       "type",
@@ -1381,6 +1409,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       "cantonNom",
       "nomLocalite",
       "etabNom",
+      "etabAdresse",
       "description",
       "etabJour",
       "toiletteType",
@@ -1399,6 +1428,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       "cantonNom",
       "nomLocalite",
       "etabNom",
+      "etabAdresse",
       "description",
       "etabJour",
       "type",
@@ -1413,6 +1443,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       "cantonNom",
       "nomLocalite",
       "etabNom",
+      "etabAdresse",
       "description",
       "etabJour",
       "etabAdresse",
@@ -1430,6 +1461,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       "cantonNom",
       "nomLocalite",
       "etabNom",
+      "etabAdresse",
       "description",
       "type",
       "etabCreationDate",
@@ -1443,6 +1475,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       "cantonNom",
       "nomLocalite",
       "etabNom",
+      "etabAdresse",
       "description",
       "etabJour",
       "toiletteType",
@@ -1461,6 +1494,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       "cantonNom",
       "nomLocalite",
       "etabNom",
+      "etabAdresse",
       "description",
       "etabJour",
       "etabAdresse",
@@ -1678,12 +1712,13 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
       if (!response.ok) throw new Error(`Erreur ${response.status}`)
       const updated = await response.json()
       console.log("Lieu mis à jour :", updated)
-
+      toast.success("Lieu mis à jour avec succès !")
       // Reset états
       setImagesToDelete([])
       setNewImages([])
       setImagePreviews([])
     } catch (err) {
+      toast.error("Erreur lors de la mise à jour du lieu.")
       console.error("Erreur lors de la mise à jour :", err)
     }
   }

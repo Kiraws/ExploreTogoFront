@@ -57,7 +57,7 @@ export function MainNavbar({ initialUser }: { initialUser?: SessionUser | null }
   };
 
   return (
-    <nav className="fixed top-6 inset-x-4 h-16 bg-background border dark:border-slate-700/70 max-w-screen-xl mx-auto rounded-full z-50">
+  <nav className="fixed top-6 inset-x-4 h-16 border border-white/20 dark:border-slate-700/40 max-w-screen-xl mx-auto rounded-full z-50 bg-white/20 dark:bg-slate-900/30 backdrop-blur-md shadow-lg">
       <div className="h-full flex items-center justify-between mx-auto px-4">
         <Logo />
 
@@ -74,13 +74,19 @@ export function MainNavbar({ initialUser }: { initialUser?: SessionUser | null }
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="rounded-full focus:outline-none" title={user.firstname || user.name || user.email}>
+                <button
+                  className="rounded-full focus:outline-none"
+                  title={user.firstname || user.name || user.email}
+                >
                   <Avatar className="h-11 w-11 ring-2 ring-foreground/15 hover:ring-foreground/25 transition">
                     {user.avatar ? (
-                      <AvatarImage src={user.avatar} alt={user.firstname || user.name || "Avatar"} />
+                      <AvatarImage
+                        src={user.avatar}
+                        alt={user.firstname || user.name || "Avatar"}
+                      />
                     ) : null}
                     <AvatarFallback className="flex items-center justify-center bg-foreground/5 text-muted-foreground">
-                      <UserIcon className="" size={20} />
+                      <UserIcon size={20} />
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -116,6 +122,7 @@ export function MainNavbar({ initialUser }: { initialUser?: SessionUser | null }
           </div>
         </div>
       </div>
-    </nav>
+      </nav>
+
   );
 }

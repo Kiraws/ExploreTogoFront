@@ -86,8 +86,13 @@ export function middleware(req: NextRequest) {
   }
 
   // Définir les pages autorisées par rôle (configurable ici)
-  const userPages = ["/", "/profil","/explore", "/user/settings","/no-image.png"]; // Exemples pour rôle "user" - ajoute tes pages
-  const adminPages = ["/dashboard", "/admin/users", "/admin/products"]; // Exemples pour rôle "admin" - ajoute tes pages
+  const userPages = [
+    "/", 
+    "/profil",
+    "/explore", 
+    "/user/settings",
+    "/no-image.png"
+  ];
 
   // Logique de redirection basée sur rôle, similaire à NextAuth
   if (role === "utilisateur") {
@@ -95,11 +100,11 @@ export function middleware(req: NextRequest) {
     if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
       console.log("User essaie d'accéder à une page admin, redirection vers /");
       const url = req.nextUrl.clone();
-      url.pathname = "/"; // Ou une page user par défaut
+      url.pathname = "/";
       return NextResponse.redirect(url);
     }
-    // User peut accéder à / si connecté (selon ta spec initiale)
-    if (pathname === "/" || userPages.includes(pathname)) {
+    // User peut accéder à / si connecté et aux pages qui commencent par /explore
+    if (pathname === "/" || userPages.includes(pathname) || pathname.startsWith("/explore/")) {
       return NextResponse.next();
     }
     // Si page non autorisée pour user, rediriger

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Toaster } from "@/components/ui/sonner"
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-providers"
@@ -6,7 +7,7 @@ import { ActiveThemeProvider } from "@/components/active-theme"
 import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
 import { ConditionalNavbar } from "@/components/conditional-navbar";
-import { Toaster } from "@/components/ui/sonner"
+
 
 // const META_THEME_COLORS = {
 //   light: "#ffffff",
@@ -75,10 +76,10 @@ export default async function RootLayout({
               <ConditionalNavbar initialUser={initialUser} />
               <main className="">
                 {children}
-                <Toaster />
               </main>
             </ActiveThemeProvider>
           </ThemeProvider>
+          <Toaster />
       </body>
     </html>
   );
