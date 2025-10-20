@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner"
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+
+import "./globals.css"
+import { SmoothCursor } from "@/registry/magicui/smooth-cursor";
 import { ThemeProvider } from "@/components/providers/theme-providers"
 import { ActiveThemeProvider } from "@/components/active-theme"
 import { cookies } from "next/headers";
@@ -76,6 +77,7 @@ export default async function RootLayout({
               <ConditionalNavbar initialUser={initialUser} />
               <main className="">
                 {children}
+                <SmoothCursor />
               </main>
             </ActiveThemeProvider>
           </ThemeProvider>

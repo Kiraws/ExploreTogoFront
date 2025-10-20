@@ -1,9 +1,11 @@
 "use client"
 
+import { Heart } from "lucide-react"
 import { useEffect, useState, useMemo } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
+
 import {
   IconMapPin,
   IconSearch,
@@ -13,6 +15,7 @@ import {
   IconX,
   IconChevronDown,
   IconPhotoOff,
+  IconPhoto,
 } from "@tabler/icons-react"
 import type { Lieu } from "@/components/data-table"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +24,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { buildApiUrl } from "@/lib/config"
 import { NO_IMAGE } from "@/lib/images"
 import { cn } from "@/lib/utils"
@@ -36,7 +40,7 @@ const translateType = (type: string) =>
     sites: "Sites Naturels",
     zones: "Zones Protégées",
     touristique: "Sites Touristiques",
-  }[type] || type)
+  })[type] || type
 
 const getTypeIcon = (type: string) =>
   ({
@@ -48,7 +52,7 @@ const getTypeIcon = (type: string) =>
     sites: "🏛️",
     parcs: "🏖️",
     zones: "🌿",
-  }[type] || "📍")
+  })[type] || "📍"
 
 const reconstructImagePath = (img: unknown): string | null => {
   const path = typeof img === "string" ? img : Object.values((img as Record<string, string>) || {}).join("")
@@ -71,45 +75,37 @@ const extractCoordinates = (geometry: string): Coordinate[] | null => {
   const geom = geometry.replace(/^SRID=\d+;/, "").trim()
 
   if (geom.startsWith("POINT")) {
-    const match = geom.match(/POINT\s*\(([^)]+)\)/)
+    const match = geom.match(/POINT\s*$$([^)]+)$$/)
     if (!match) return null
-    // ⚠️ Tes données sont stockées « lat lng » → on inverse
     const [lat, lng] = match[1].split(" ").map(Number)
-    return [{ lat, lng }] // ✅ bon ordre pour Google
+    return [{ lat, lng }]
   }
 
-  // MULTIPOINT, LINESTRING, POLYGON : même logique
   if (geom.startsWith("MULTIPOINT")) {
-    const match = geom.match(/MULTIPOINT\s*\((.+)\)/)
+    const match = geom.match(/MULTIPOINT\s*$$(.+)$$/)
     if (!match) return null
-    return match[1]
-      .split(",")
-      .map(coord => {
-        const [lat, lng] = coord.replace(/[()]/g, "").trim().split(" ").map(Number)
-        return { lat, lng }
-      })
+    return match[1].split(",").map((coord) => {
+      const [lat, lng] = coord.replace(/[()]/g, "").trim().split(" ").map(Number)
+      return { lat, lng }
+    })
   }
 
   if (geom.startsWith("LINESTRING")) {
-    const match = geom.match(/LINESTRING\s*\((.+)\)/)
+    const match = geom.match(/LINESTRING\s*$$(.+)$$/)
     if (!match) return null
-    return match[1]
-      .split(",")
-      .map(coord => {
-        const [lat, lng] = coord.trim().split(" ").map(Number)
-        return { lat, lng }
-      })
+    return match[1].split(",").map((coord) => {
+      const [lat, lng] = coord.trim().split(" ").map(Number)
+      return { lat, lng }
+    })
   }
 
   if (geom.startsWith("POLYGON")) {
-    const match = geom.match(/POLYGON\s*\(\((.+)\)\)/)
+    const match = geom.match(/POLYGON\s*$$\(.+}$$/)
     if (!match) return null
-    return match[1]
-      .split(",")
-      .map(coord => {
-        const [lat, lng] = coord.trim().split(" ").map(Number)
-        return { lat, lng }
-      })
+    return match[1].split(",").map((coord) => {
+      const [lat, lng] = coord.trim().split(" ").map(Number)
+      return { lat, lng }
+    })
   }
 
   return null
@@ -120,48 +116,56 @@ const hasValidImages = (lieu: Lieu) => {
   return images.length > 0 && !images.includes(NO_IMAGE)
 }
 
-// ===== COMPOSANTS DE CARDS =====
+const truncateDescription = (text: string | undefined, maxLength = 30) => {
+  if (!text) return ""
+  return text.length > maxLength ? text.slice(0, maxLength) + "..." : text
+}
+
+// ===== COMPOSANTS =====
 
 function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
   const [idx, setIdx] = useState(0)
   return (
-    <div className="relative w-full aspect-video overflow-hidden rounded-2xl">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={idx}
-          initial={{ opacity: 0, x: 100 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -100 }}
-          transition={{ duration: 0.4 }}
-          className="absolute inset-0"
-        >
-          <Image src={images[idx] || NO_IMAGE} alt={alt} fill className="object-cover" />
-        </motion.div>
-      </AnimatePresence>
+    <div className="relative w-full aspect-video overflow-hidden rounded-t-xl">
+      <motion.div
+        key={idx}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="absolute inset-0"
+      >
+        <Image src={images[idx] || NO_IMAGE} alt={alt} fill className="object-cover" />
+      </motion.div>
 
       {images.length > 1 && (
         <>
           <button
-            onClick={() => setIdx((i) => (i - 1 + images.length) % images.length)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-2 shadow-md transition"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIdx((i) => (i - 1 + images.length) % images.length)
+            }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 shadow-lg transition"
           >
-            <IconChevronLeft className="size-5" />
+            <IconChevronLeft className="size-4" />
           </button>
           <button
-            onClick={() => setIdx((i) => (i + 1) % images.length)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-2 shadow-md transition"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIdx((i) => (i + 1) % images.length)
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 shadow-lg transition"
           >
-            <IconChevronRight className="size-5" />
+            <IconChevronRight className="size-4" />
           </button>
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
             {images.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setIdx(i)}
-                className={cn(
-                  "h-2 rounded-full transition-all",
-                  i === idx ? "bg-white w-6" : "bg-white/50 w-2"
-                )}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIdx(i)
+                }}
+                className={cn("h-1.5 rounded-full transition-all", i === idx ? "bg-white w-4" : "bg-white/60 w-1.5")}
               />
             ))}
           </div>
@@ -171,118 +175,97 @@ function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
   )
 }
 
-function LocationCardWithImage({ lieu }: { lieu: Lieu }) {
+function LocationCard({
+  lieu,
+  likedPlaces,
+  onLikeToggle,
+}: {
+  lieu: Lieu
+  likedPlaces: number[]
+  onLikeToggle: (lieuId: number) => void
+}) {
   const router = useRouter()
   const coords = extractCoordinates(lieu.geometry)
+  const isLiked = likedPlaces.includes(Number(lieu.id))
+
+  const images = normalizeImages(lieu.etabImages)
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="group"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      whileHover={{ scale: 1.02 }}
+      className="relative"
     >
       <Card
-        className="overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+        className="overflow-hidden rounded-2xl border border-[#006A4E]/20 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
         onClick={() => router.push(`/explore/${lieu.id}`)}
       >
-        <ImageCarousel images={normalizeImages(lieu.etabImages)} alt={lieu.etabNom} />
+        {/* Bouton Like avec animation */}
+        <motion.button
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onLikeToggle(Number(lieu.id))
+          }}
+          className="absolute top-3 right-3 z-10 bg-white/80 dark:bg-gray-900/80 text-red-500 p-2 rounded-full shadow-md transition"
+        >
+          <Heart className={`size-4 ${isLiked ? "fill-red-500" : ""}`} />
+        </motion.button>
+
+        {/* Image ou icône */}
+        {hasValidImages(lieu) ? (
+          <ImageCarousel images={images} alt={lieu.etabNom} />
+        ) : (
+          <div className="w-full aspect-video bg-gradient-to-br from-white to-[#006A4E]/10 dark:from-gray-800 dark:to-[#006A4E]/20 flex items-center justify-center rounded-t-2xl">
+            <IconPhotoOff className="size-10 text-[#006A4E] dark:text-[#FFCE00]" />
+          </div>
+        )}
 
         <CardContent className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <Badge variant="secondary" className="text-xs">
+          <div className="flex items-center justify-between gap-2">
+            <Badge className="bg-gradient-to-r from-[#006A4E] to-[#006A4E]/80 text-white border-0 text-xs">
               {getTypeIcon(lieu.type)} {translateType(lieu.type)}
             </Badge>
-            <span className="text-xs text-muted-foreground">{lieu.status ? "Actif" : "Inactif"}</span>
           </div>
 
-          <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-2">{lieu.etabNom}</h3>
+          <h3 className="ffont-semibold text-base text-[#006A4E] dark:text-[#FFCE00] line-clamp-2 group-hover:text-[#006A4E]/80 dark:group-hover:text-[#FFCE00]/80 transition-colors">
+            {lieu.etabNom}
+          </h3>
 
           <div className="flex items-start gap-2 text-sm text-muted-foreground">
-            <IconMapPin className="size-4 mt-0.5" />
+            <IconMapPin className="size-4 mt-0.5 flex-shrink-0" />
             <span className="line-clamp-2">
-              {[lieu.nomLocalite, lieu.cantonNom, lieu.communeNom, lieu.prefectureNom, lieu.regionNom]
-                .filter(Boolean)
-                .join(", ")}
+              {[lieu.nomLocalite, lieu.cantonNom, lieu.communeNom].filter(Boolean).join(", ")}
             </span>
           </div>
 
           {lieu.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{lieu.description}</p>
+            <p className="text-sm text-muted-foreground/80 line-clamp-1">{truncateDescription(lieu.description, 60)}</p>
           )}
 
-{coords && (
-  <>
-    
-    <Button
-      size="sm"
-      variant="outline"
-      className="w-full rounded-full"
-      onClick={(e) => {
-        e.stopPropagation()
-        const url = `https://www.google.com/maps/search/?api=1&query=${coords[0].lat},${coords[0].lng}`
-        console.log("Maps URL:", url)
-        window.open(url, "_blank")
-      }}
-    >
-      <IconMapPin className="size-4 mr-2" />
-      Voir sur la carte
-    </Button>
-  </>
-)}
+          {coords && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full mt-2 bg-white/50 dark:bg-gray-800/50 border border-[#006A4E]/30 rounded-full hover:bg-[#006A4E]/10"
+              onClick={(e) => {
+                e.stopPropagation()
+                const url = `https://www.google.com/maps/search/?api=1&query=${coords[0].lat},${coords[0].lng}`
+                window.open(url, "_blank")
+              }}
+            >
+              <IconMapPin className="size-4 mr-2 text-[#006A4E] dark:text-[#FFCE00]" />
+              Voir sur la carte
+            </Button>
+          )}
         </CardContent>
       </Card>
     </motion.div>
   )
 }
-
-// ... le reste du fichier reste identique (LocationCardWithoutImage, filtres, page principale, pagination, etc.)
-
-function LocationCardWithoutImage({ lieu }: { lieu: Lieu }) {
-  const router = useRouter()
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="group"
-    >
-      <Card
-        className="rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer p-4 flex items-center gap-4"
-        onClick={() => router.push(`/explore/${lieu.id}`)}
-      >
-        <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-          <IconPhotoOff className="w-6 h-6 text-gray-400" />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <Badge variant="outline" className="text-xs">
-              {getTypeIcon(lieu.type)} {translateType(lieu.type)}
-            </Badge>
-            <span className="text-xs text-muted-foreground">{lieu.status ? "Actif" : "Inactif"}</span>
-          </div>
-          <h3 className="font-semibold text-gray-900 dark:text-white">{lieu.etabNom}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-1">
-            {[lieu.nomLocalite, lieu.cantonNom, lieu.communeNom, lieu.prefectureNom, lieu.regionNom]
-              .filter(Boolean)
-              .join(", ")}
-          </p>
-        </div>
-      </Card>
-    </motion.div>
-  )
-}
-
-function LocationCard({ lieu }: { lieu: Lieu }) {
-  return hasValidImages(lieu) ? (
-    <LocationCardWithImage lieu={lieu} />
-  ) : (
-    <LocationCardWithoutImage lieu={lieu} />
-  )
-}
-
-// ===== FILTRES =====
 
 function CollapsibleFilter({
   title,
@@ -298,7 +281,7 @@ function CollapsibleFilter({
   const [open, setOpen] = useState(false)
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center justify-between w-full p-3 hover:bg-muted rounded-lg">
+      <CollapsibleTrigger className="flex items-center justify-between w-full p-3 hover:bg-white/50 dark:hover:bg-gray-800/50 rounded-lg transition">
         <div className="flex items-center gap-2">
           <span className="font-medium">{title}</span>
           {selected.length > 0 && <Badge className="text-xs">{selected.length}</Badge>}
@@ -311,7 +294,7 @@ function CollapsibleFilter({
             <Badge
               key={opt}
               variant={selected.includes(opt) ? "default" : "outline"}
-              className="cursor-pointer"
+              className="cursor-pointer hover:scale-105 transition"
               onClick={() => onToggle(opt)}
             >
               {opt}
@@ -337,10 +320,47 @@ export default function LieuxPage() {
   const [selectedCommunes, setSelectedCommunes] = useState<string[]>([])
   const [selectedCantons, setSelectedCantons] = useState<string[]>([])
   const [selectedLocalites, setSelectedLocalites] = useState<string[]>([])
-  const [imageFilter, setImageFilter] = useState<"with" | "without" | null>(null)
+  const [imageFilter, setImageFilter] = useState<"all" | "with" | "without">("all")
 
   const [page, setPage] = useState(1)
   const perPage = 12
+
+  const [likedPlaces, setLikedPlaces] = useState<number[]>([])
+
+  const handleLikeToggle = async (lieuId: number) => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      alert("Veuillez vous connecter pour aimer un lieu.")
+      return
+    }
+
+    const isLiked = likedPlaces.includes(lieuId)
+    const url = buildApiUrl(`/api/lieux/${lieuId}/likes`)
+    const method = isLiked ? "DELETE" : "POST"
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setLikedPlaces((prev) =>
+          isLiked ? prev.filter((id) => id !== lieuId) : [...prev, lieuId]
+        )
+
+      } else {
+        console.error("Erreur:", data.message || data)
+      }
+    } catch (err) {
+      console.error("Erreur réseau:", err)
+    }
+  }
 
   // Fetch data
   useEffect(() => {
@@ -357,6 +377,28 @@ export default function LieuxPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Charger les lieux likés
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    const fetchLikedPlaces = async () => {
+      try {
+        const res = await fetch(buildApiUrl("/api/likes"), {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error("Erreur lors du chargement des lieux likés")
+        const data = await res.json()
+        const likedIds = data.data.map((like: any) => Number(like.lieuId || like.id))
+        setLikedPlaces(likedIds)
+      } catch (err) {
+        console.error("Erreur lors du chargement des lieux likés:", err)
+      }
+    }
+
+    fetchLikedPlaces()
+  }, [])
+
   // Options uniques
   const types = useMemo(() => [...new Set(lieux.map((l) => l.type))].sort(), [lieux])
   const regions = useMemo(() => [...new Set(lieux.map((l) => l.regionNom).filter(Boolean))].sort(), [lieux])
@@ -364,63 +406,51 @@ export default function LieuxPage() {
     () =>
       [
         ...new Set(
-          (selectedRegions.length > 0
-            ? lieux.filter((l) => selectedRegions.includes(l.regionNom))
-            : lieux
-          )
+          (selectedRegions.length > 0 ? lieux.filter((l) => selectedRegions.includes(l.regionNom)) : lieux)
             .map((l) => l.prefectureNom)
-            .filter(Boolean)
+            .filter(Boolean),
         ),
       ].sort(),
-    [lieux, selectedRegions]
+    [lieux, selectedRegions],
   )
   const communes = useMemo(
     () =>
       [
         ...new Set(
-          (selectedRegions.length > 0
-            ? lieux.filter((l) => selectedRegions.includes(l.regionNom))
-            : lieux
-          )
+          (selectedRegions.length > 0 ? lieux.filter((l) => selectedRegions.includes(l.regionNom)) : lieux)
             .filter((l) => (selectedPrefectures.length > 0 ? selectedPrefectures.includes(l.prefectureNom) : true))
             .map((l) => l.communeNom)
-            .filter(Boolean)
+            .filter(Boolean),
         ),
       ].sort(),
-    [lieux, selectedRegions, selectedPrefectures]
+    [lieux, selectedRegions, selectedPrefectures],
   )
   const cantons = useMemo(
     () =>
       [
         ...new Set(
-          (selectedRegions.length > 0
-            ? lieux.filter((l) => selectedRegions.includes(l.regionNom))
-            : lieux
-          )
+          (selectedRegions.length > 0 ? lieux.filter((l) => selectedRegions.includes(l.regionNom)) : lieux)
             .filter((l) => (selectedPrefectures.length > 0 ? selectedPrefectures.includes(l.prefectureNom) : true))
             .filter((l) => (selectedCommunes.length > 0 ? selectedCommunes.includes(l.communeNom) : true))
             .map((l) => l.cantonNom)
-            .filter(Boolean)
+            .filter(Boolean),
         ),
       ].sort(),
-    [lieux, selectedRegions, selectedPrefectures, selectedCommunes]
+    [lieux, selectedRegions, selectedPrefectures, selectedCommunes],
   )
   const localites = useMemo(
     () =>
       [
         ...new Set(
-          (selectedRegions.length > 0
-            ? lieux.filter((l) => selectedRegions.includes(l.regionNom))
-            : lieux
-          )
+          (selectedRegions.length > 0 ? lieux.filter((l) => selectedRegions.includes(l.regionNom)) : lieux)
             .filter((l) => (selectedPrefectures.length > 0 ? selectedPrefectures.includes(l.prefectureNom) : true))
             .filter((l) => (selectedCommunes.length > 0 ? selectedCommunes.includes(l.communeNom) : true))
             .filter((l) => (selectedCantons.length > 0 ? selectedCantons.includes(l.cantonNom) : true))
             .map((l) => l.nomLocalite)
-            .filter(Boolean)
+            .filter(Boolean),
         ),
       ].sort(),
-    [lieux, selectedRegions, selectedPrefectures, selectedCommunes, selectedCantons]
+    [lieux, selectedRegions, selectedPrefectures, selectedCommunes, selectedCantons],
   )
 
   // Filter logic
@@ -430,7 +460,7 @@ export default function LieuxPage() {
       res = res.filter(
         (l) =>
           l.etabNom.toLowerCase().includes(search.toLowerCase()) ||
-          l.description?.toLowerCase().includes(search.toLowerCase())
+          l.description?.toLowerCase().includes(search.toLowerCase()),
       )
     if (selectedTypes.length) res = res.filter((l) => selectedTypes.includes(l.type))
     if (selectedRegions.length) res = res.filter((l) => selectedRegions.includes(l.regionNom))
@@ -439,7 +469,16 @@ export default function LieuxPage() {
     if (selectedCantons.length) res = res.filter((l) => selectedCantons.includes(l.cantonNom))
     if (selectedLocalites.length) res = res.filter((l) => selectedLocalites.includes(l.nomLocalite))
     return res
-  }, [search, selectedTypes, selectedRegions, selectedPrefectures, selectedCommunes, selectedCantons, selectedLocalites, lieux])
+  }, [
+    search,
+    selectedTypes,
+    selectedRegions,
+    selectedPrefectures,
+    selectedCommunes,
+    selectedCantons,
+    selectedLocalites,
+    lieux,
+  ])
 
   const withImages = useMemo(() => filtered.filter(hasValidImages), [filtered])
   const withoutImages = useMemo(() => filtered.filter((l) => !hasValidImages(l)), [filtered])
@@ -448,7 +487,7 @@ export default function LieuxPage() {
     if (imageFilter === "with") return withImages
     if (imageFilter === "without") return withoutImages
     return filtered
-  }, [filtered, imageFilter])
+  }, [filtered, withImages, withoutImages, imageFilter])
 
   const paginated = useMemo(() => {
     return filteredByImage.slice((page - 1) * perPage, page * perPage)
@@ -463,22 +502,18 @@ export default function LieuxPage() {
       </div>
     )
   if (error)
-    return (
-      <div className="min-h-screen flex items-center justify-center text-destructive">
-        Erreur : {error}
-      </div>
-    )
+    return <div className="min-h-screen flex items-center justify-center text-destructive">Erreur : {error}</div>
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pt-24">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Header animé */}
+    <div className="min-h-screen  dark:from-gray-900 dark:to-[#006A4E]/30 pt-24">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row gap-4 items-center justify-between"
+          className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-[#006A4E]/20"
         >
-          <h1 className="text-3xl font-bold">Explorer les lieux</h1>
+          <h1 className="text-3xl font-bold text-[#006A4E] dark:text-[#FFCE00]">Explorer les lieux</h1>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative w-full md:w-80">
@@ -501,12 +536,23 @@ export default function LieuxPage() {
 
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="rounded-full gap-2">
+                <Button variant="outline" className="rounded-full gap-2 bg-transparent">
                   <IconFilter className="size-4" />
                   Filtrer
-                  {(selectedRegions.length + selectedPrefectures.length + selectedCommunes.length + selectedCantons.length + selectedLocalites.length + selectedTypes.length) > 0 && (
+                  {selectedRegions.length +
+                    selectedPrefectures.length +
+                    selectedCommunes.length +
+                    selectedCantons.length +
+                    selectedLocalites.length +
+                    selectedTypes.length >
+                    0 && (
                     <Badge className="ml-1">
-                      {selectedRegions.length + selectedPrefectures.length + selectedCommunes.length + selectedCantons.length + selectedLocalites.length + selectedTypes.length}
+                      {selectedRegions.length +
+                        selectedPrefectures.length +
+                        selectedCommunes.length +
+                        selectedCantons.length +
+                        selectedLocalites.length +
+                        selectedTypes.length}
                     </Badge>
                   )}
                 </Button>
@@ -516,12 +562,42 @@ export default function LieuxPage() {
                   <SheetTitle>Filtrer les lieux</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-2">
-                  <CollapsibleFilter title="Types" options={types} selected={selectedTypes} onToggle={(v) => setSelectedTypes((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))} />
-                  <CollapsibleFilter title="Régions" options={regions} selected={selectedRegions} onToggle={(v) => setSelectedRegions((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))} />
-                  <CollapsibleFilter title="Préfectures" options={prefectures.filter(Boolean)} selected={selectedPrefectures} onToggle={(v) => setSelectedPrefectures((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))} />
-                  <CollapsibleFilter title="Communes" options={communes.filter(Boolean)} selected={selectedCommunes} onToggle={(v) => setSelectedCommunes((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))} />
-                  <CollapsibleFilter title="Cantons" options={cantons.filter(Boolean)} selected={selectedCantons} onToggle={(v) => setSelectedCantons((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))} />
-                  <CollapsibleFilter title="Localités" options={localites.filter(Boolean)} selected={selectedLocalites} onToggle={(v) => setSelectedLocalites((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))} />
+                  <CollapsibleFilter
+                    title="Types"
+                    options={types}
+                    selected={selectedTypes}
+                    onToggle={(v) => setSelectedTypes((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))}
+                  />
+                  <CollapsibleFilter
+                    title="Régions"
+                    options={regions}
+                    selected={selectedRegions}
+                    onToggle={(v) => setSelectedRegions((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))}
+                  />
+                  <CollapsibleFilter
+                    title="Préfectures"
+                    options={prefectures.filter(Boolean)}
+                    selected={selectedPrefectures}
+                    onToggle={(v) => setSelectedPrefectures((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))}
+                  />
+                  <CollapsibleFilter
+                    title="Communes"
+                    options={communes.filter(Boolean)}
+                    selected={selectedCommunes}
+                    onToggle={(v) => setSelectedCommunes((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))}
+                  />
+                  <CollapsibleFilter
+                    title="Cantons"
+                    options={cantons.filter(Boolean)}
+                    selected={selectedCantons}
+                    onToggle={(v) => setSelectedCantons((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))}
+                  />
+                  <CollapsibleFilter
+                    title="Localités"
+                    options={localites.filter(Boolean)}
+                    selected={selectedLocalites}
+                    onToggle={(v) => setSelectedLocalites((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))}
+                  />
                 </div>
                 <div className="m-6">
                   <Button
@@ -535,7 +611,7 @@ export default function LieuxPage() {
                       setSelectedCantons([])
                       setSelectedLocalites([])
                       setSearch("")
-                      setImageFilter(null)
+                      setImageFilter("all")
                       setPage(1)
                     }}
                   >
@@ -547,42 +623,65 @@ export default function LieuxPage() {
           </div>
         </motion.div>
 
-        {/* Boutons de filtre image */}
-        <div className="flex items-center gap-3">
-          {withImages.length > 0 && (
-            <Button
-              size="sm"
-              variant={imageFilter === "with" ? "default" : "outline"}
-              onClick={() => {
-                setImageFilter(imageFilter === "with" ? null : "with")
-                setPage(1)
-              }}
-            >
-              Avec images {imageFilter === "with" && `(${withImages.length})`}
-            </Button>
-          )}
-          {withoutImages.length > 0 && (
-            <Button
-              size="sm"
-              variant={imageFilter === "without" ? "default" : "outline"}
-              onClick={() => {
-                setImageFilter(imageFilter === "without" ? null : "without")
-                setPage(1)
-              }}
-            >
-              Sans images {imageFilter === "without" && `(${withoutImages.length})`}
-            </Button>
-          )}
-        </div>
+        <Tabs
+  value={imageFilter}
+  onValueChange={(v) => {
+    setImageFilter(v as "all" | "with" | "without")
+    setPage(1)
+  }}
+>
+  <TabsList className="flex w-full max-w-2xl mx-auto gap-2 sm:gap-4 p-1 px-7  bg-white/60 dark:bg-gray-800/40 backdrop-blur-sm border border-[#006A4E]/20">
+    <TabsTrigger
+      value="all"
+      className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm  data-[state=active]:bg-[#006A4E] data-[state=active]:text-white"
+    >
+      <span className="inline">Tous</span>
+      <Badge variant="secondary" className="text-xs hidden sm:inline">
+        {filtered.length}
+      </Badge>
+    </TabsTrigger>
 
-        {/* Grille animée */}
+    <TabsTrigger
+      value="with"
+      className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-[#006A4E] data-[state=active]:text-white"
+    >
+      <IconPhoto className="size-4" />
+      <span className="hidden sm:inline">Avec images</span>
+      <Badge variant="secondary" className=" text-xs ">
+        {withImages.length}
+      </Badge>
+    </TabsTrigger>
+
+    <TabsTrigger
+      value="without"
+      className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-[#006A4E] data-[state=active]:text-white"
+    >
+      <IconPhotoOff className="size-4" />
+      <span className="hidden sm:inline">Sans images</span>
+      <Badge variant="secondary" className="text-xs">
+        {withoutImages.length}
+      </Badge>
+    </TabsTrigger>
+  </TabsList>
+</Tabs>
         <motion.div
-          layout
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
           <AnimatePresence>
-            {paginated.map((lieu) => (
-              <LocationCard key={lieu.id} lieu={lieu} />
+            {paginated.map((lieu, idx) => (
+              <motion.div
+                key={lieu.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <LocationCard
+                  lieu={lieu}
+                  likedPlaces={likedPlaces}
+                  onLikeToggle={handleLikeToggle}
+                />
+              </motion.div>
             ))}
           </AnimatePresence>
         </motion.div>
@@ -592,10 +691,11 @@ export default function LieuxPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex justify-center items-center gap-3"
+            className="flex justify-center items-center gap-3 bg-white/60 dark:bg-gray-800/40 backdrop-blur-sm rounded-full px-6 py-3 shadow"
           >
             <Button
-              variant="outline"
+              variant="ghost"
+              size="icon"
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
               disabled={page === 1}
               className="rounded-full"
@@ -606,7 +706,8 @@ export default function LieuxPage() {
               Page {page} sur {totalPages}
             </span>
             <Button
-              variant="outline"
+              variant="ghost"
+              size="icon"
               onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
               disabled={page === totalPages}
               className="rounded-full"

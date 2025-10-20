@@ -37,6 +37,7 @@ export default function ProfilePage() {
   })
   const [user, setUser] = useState<UserProfile | null>(null)
   const [error, setError] = useState<string | null>(null)
+  
 
   useEffect(() => {
     try {

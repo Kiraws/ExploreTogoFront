@@ -1,4 +1,5 @@
-import { NO_IMAGE } from "@/lib/images"
+import { NO_IMAGE } from "@/lib/images" 
+
 
 export function translateType(type: string): string {
   const translations: Record<string, string> = {

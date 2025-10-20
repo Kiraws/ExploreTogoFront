@@ -91,7 +91,8 @@ export function middleware(req: NextRequest) {
     "/profil",
     "/explore", 
     "/user/settings",
-    "/no-image.png"
+    "/no-image.png",
+    "/about",
   ];
 
   // Logique de redirection basée sur rôle, similaire à NextAuth

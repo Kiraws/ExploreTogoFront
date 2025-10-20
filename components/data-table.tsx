@@ -1157,7 +1157,7 @@ export function DataTable({ data: initialData }: { data: Lieu[] }) {
             <TabsTrigger value="touristique">Touristique</TabsTrigger>
           </TabsList>
          <div className="flex items-center gap-2">
-            <GlobalFilter globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+         
             <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)}>
               <IconPlus />
               <span className="hidden lg:inline">Ajouter un lieu</span>
