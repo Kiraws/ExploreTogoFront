@@ -29,7 +29,7 @@ const TilesComponent: React.FC<{ className?: string; rows?: number; cols?: numbe
                 transition: { duration: 2 }
               }}
               key={`col` + j}
-              className="md:w-12 sm:h-12 w-9 h-9 border-r border-t dark:border-neutral-900 border-neutral-200 relative"
+              className="md:w-12 sm:h-12 w-9 h-9 border-r border-t dark:border-neutral-800 border-neutral-200 relative"
             />
           ))}
         </motion.div>

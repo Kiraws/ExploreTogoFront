@@ -7,7 +7,7 @@ import { Tiles } from "@/components/tiles"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useEffect, useState } from "react"
 import {
-  IconMapPin, IconHeart, IconBookmark, IconCompass,
+  IconCompass,
   IconChevronsDown, IconMail, IconBrandInstagram,
   IconBrandTwitter, IconBrandGithub
 } from "@tabler/icons-react"
@@ -173,7 +173,7 @@ export default function Home() {
       <section className="container mx-auto px-6 py-24">
         <motion.div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-[#006A4E] dark:text-[#FFCE00]">Explorer par catégorie</h2>
-          <p className="text-muted-foreground">Cliquez sur une catégorie pour voir les lieux correspondants.</p>
+          {/* <p className="text-muted-foreground">Cliquez sur une catégorie pour voir les lieux correspondants.</p> */}
         </motion.div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           {CATEGORIES.map((cat, idx) => (

@@ -28,6 +28,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { buildApiUrl } from "@/lib/config"
 import { NO_IMAGE } from "@/lib/images"
 import { cn } from "@/lib/utils"
+import PlaceCardSkeleton from "@/components/PlaceCardSkeleton"
 
 // ===== UTILITAIRES =====
 const translateType = (type: string) =>
@@ -497,10 +498,19 @@ export default function LieuxPage() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-muted-foreground">Chargement…</div>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <Image
+          src="/load-more-animate.svg"
+          alt="Chargement..."
+          width={400}
+          height={400}
+          className="animate-pulse"
+          priority
+        />
+        <p className="text-muted-foreground text-sm">Chargement des lieux...</p>
       </div>
     )
+  
   if (error)
     return <div className="min-h-screen flex items-center justify-center text-destructive">Erreur : {error}</div>
 
