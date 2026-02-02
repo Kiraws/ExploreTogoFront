@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { IconBrandGithub, IconRocket, IconMap, IconDeviceMobile, IconRobot, IconChartBar } from "@tabler/icons-react"
+import { IconBrandGithub, IconRocket, IconMap, IconRobot, IconChartBar } from "@tabler/icons-react"
 
 const togolaisColors = {
   green: "#006A4E",
@@ -44,7 +44,7 @@ export default function AboutPage() {
             className="space-y-6 max-w-3xl mx-auto"
           >
             <h1 className="text-4xl md:text-5xl font-bold">
-              À Propos d'<span style={{ color: togolaisColors.green }}>ExploreTg</span>
+              À Propos d&apos;<span style={{ color: togolaisColors.green }}>ExploreTg</span>
             </h1>
             <p className="text-xl text-muted-foreground">
               Une initiative Open Data Science pour découvrir les{" "}

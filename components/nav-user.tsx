@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  IconCreditCard,
   IconDotsVertical,
   IconLogout,
   IconNotification,
@@ -72,6 +71,7 @@ export function NavUser({
       await fetch("/api/logout", { method: "POST" })
     } catch (e) {
       // ignore
+      console.error("Erreur lors de la déconnexion :", e);
     } finally {
       router.push("/login")
     }

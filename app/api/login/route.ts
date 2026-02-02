@@ -49,6 +49,7 @@ export async function POST(req: Request) {
 		
 		return response;
 	} catch (e) {
+		console.error("Erreur lors de la connexion :", e);
 		return NextResponse.json({ message: "Erreur de connexion au serveur d'auth." }, { status: 502 });
 	}
 }

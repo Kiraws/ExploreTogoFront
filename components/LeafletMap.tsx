@@ -52,7 +52,7 @@ export default function LeafletMap({ latitude, longitude, placeName }: LeafletMa
         markerRef.current = null
       }
     }
-  }, [])
+  }, [latitude, longitude, placeName])
 
   useEffect(() => {
     if (mapInstanceRef.current && markerRef.current) {

@@ -916,7 +916,6 @@ function DataTableContent({ data }: { data: Lieu[] }) {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = useState("")
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
@@ -1531,6 +1530,7 @@ function LieuDetailsViewer({ lieu }: { lieu: Lieu }) {
 
 
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const normalizeOpeningDays = (days: any): string[] => {
     if (!Array.isArray(days)) return [];
   

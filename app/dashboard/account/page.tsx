@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion,} from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,16 +17,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { buildApiUrl } from "@/lib/config"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import {
-  User,
   Mail,
   Save,
   Edit3,
   Eye,
   EyeOff,
-  Key,
   CheckCircle,
   XCircle,
 } from "lucide-react"
@@ -85,6 +81,7 @@ export default function AdminProfilePage() {
         toast.error("Aucune donnée d'utilisateur trouvée dans les cookies")
       }
     } catch (err) {
+      console.error("Erreur lors de la connexion :", err);
       toast.error("Erreur lors de la récupération des données des cookies")
     }
   }, [])
@@ -130,6 +127,7 @@ export default function AdminProfilePage() {
       } else {
         toast.error(result.message || "Erreur lors de la mise à jour")
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Erreur inconnue")
     }

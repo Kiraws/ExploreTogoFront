@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Button } from "./ui/button"
 
 const REGIONS = [
   { id: "maritime", name: "Maritime", color: "#0ea5e9" },
@@ -9,7 +10,6 @@ const REGIONS = [
   { id: "kara", name: "Kara", color: "#8b5cf6" },
   { id: "savanes", name: "Savanes", color: "#ef4444" },
 ]
-import { motion } from "framer-motion"
 
 
 // Même contour que ton image, mais en SVG pur

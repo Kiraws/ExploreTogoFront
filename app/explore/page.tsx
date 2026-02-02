@@ -28,7 +28,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { buildApiUrl } from "@/lib/config"
 import { NO_IMAGE } from "@/lib/images"
 import { cn } from "@/lib/utils"
-import PlaceCardSkeleton from "@/components/PlaceCardSkeleton"
+
 
 // ===== UTILITAIRES =====
 const translateType = (type: string) =>
@@ -390,6 +390,7 @@ export default function LieuxPage() {
         })
         if (!res.ok) throw new Error("Erreur lors du chargement des lieux likés")
         const data = await res.json()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const likedIds = data.data.map((like: any) => Number(like.lieuId || like.id))
         setLikedPlaces(likedIds)
       } catch (err) {
@@ -468,7 +469,7 @@ export default function LieuxPage() {
     if (selectedPrefectures.length) res = res.filter((l) => selectedPrefectures.includes(l.prefectureNom))
     if (selectedCommunes.length) res = res.filter((l) => selectedCommunes.includes(l.communeNom))
     if (selectedCantons.length) res = res.filter((l) => selectedCantons.includes(l.cantonNom))
-    if (selectedLocalites.length) res = res.filter((l) => selectedLocalites.includes(l.nomLocalite))
+    if (selectedLocalites.length) res = res.filter((l) => l.nomLocalite && selectedLocalites.includes(l.nomLocalite))
     return res
   }, [
     search,
@@ -604,7 +605,7 @@ export default function LieuxPage() {
                   />
                   <CollapsibleFilter
                     title="Localités"
-                    options={localites.filter(Boolean)}
+                    options={localites.filter((item): item is string => Boolean(item))}
                     selected={selectedLocalites}
                     onToggle={(v) => setSelectedLocalites((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]))}
                   />

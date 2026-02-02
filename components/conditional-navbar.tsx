@@ -5,6 +5,7 @@ import { MainNavbar } from "./main-navbar"
 
 const PAGES_WITHOUT_NAVBAR = ["/dashboard","/login","/register"]
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function ConditionalNavbar({ initialUser }: { initialUser?: any }) {
   const pathname = usePathname()
 

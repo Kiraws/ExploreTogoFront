@@ -2,7 +2,7 @@
 "use client"
 import { useMemo } from "react"
 import { useLieux } from "@/lib/useLieux"
-import { hasImage, hasGeometry, countBy } from "@/lib/stats"
+import {  hasGeometry, countBy } from "@/lib/stats"
 import { Bar } from "@/components/ui/horizontal-bar"   // simple barre 100 % CSS
 import { IconPhoto, IconMapPin } from "@tabler/icons-react" 
 import { hasValidImages } from "@/lib/images" // même fichier

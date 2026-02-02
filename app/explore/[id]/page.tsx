@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react"
 import Image from "next/image"
 import dynamic from "next/dynamic"
-import { useRouter, useParams } from "next/navigation"
+import {  useParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   IconMapPin,
@@ -13,9 +13,6 @@ import {
   IconChevronRight,
   IconClock,
   IconNavigation,
-  IconPhone,
-  IconShare,
-  IconBookmark,
 } from "@tabler/icons-react"
 
 import { buildApiUrl } from "@/lib/config"
@@ -340,6 +337,7 @@ function InformationAccordion({ lieu }: { lieu: Lieu }) {
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function LocationCard({ coordinates, lieu }: { coordinates: any; lieu: Lieu }) {
  
   return (
@@ -369,29 +367,28 @@ function LocationCard({ coordinates, lieu }: { coordinates: any; lieu: Lieu }) {
   )
 }
 
-function QuickActions({ lieu }: { lieu: Lieu }) {
-  return (
-    <Card>
-      <CardContent className="p-4 space-y-3">
-        <Button className="w-full" size="lg">
-          <IconPhone className="size-4 mr-2" />
-          Contacter
-        </Button>
-        <Button variant="outline" className="w-full bg-transparent">
-          <IconShare className="size-4 mr-2" />
-          Partager
-        </Button>
-        <Button variant="ghost" className="w-full">
-          <IconBookmark className="size-4 mr-2" />
-          Sauvegarder
-        </Button>
-      </CardContent>
-    </Card>
-  )
-}
+// function QuickActions({ lieu }: { lieu: Lieu }) {
+//   return (
+//     <Card>
+//       <CardContent className="p-4 space-y-3">
+//         <Button className="w-full" size="lg">
+//           <IconPhone className="size-4 mr-2" />
+//           Contacter
+//         </Button>
+//         <Button variant="outline" className="w-full bg-transparent">
+//           <IconShare className="size-4 mr-2" />
+//           Partager
+//         </Button>
+//         <Button variant="ghost" className="w-full">
+//           <IconBookmark className="size-4 mr-2" />
+//           Sauvegarder
+//         </Button>
+//       </CardContent>
+//     </Card>
+//   )
+// }
 
 export default function LieuDetailPage() {
-  const router = useRouter()
   const params = useParams()
   const [lieu, setLieu] = useState<Lieu | null>(null)
   const [loading, setLoading] = useState(true)
@@ -415,6 +412,7 @@ export default function LieuDetailPage() {
         const json = await res.json()
         if (json.success) setLieu(json.data)
         else throw new Error(json.message || "Erreur inconnue")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
         setError(e.message)
       } finally {

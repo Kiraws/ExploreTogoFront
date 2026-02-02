@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "./navbar-04/logo";
 import { NavMenu } from "./navbar-04/nav-menu";
 import { NavigationSheet } from "./navbar-04/navigation-sheet";
-import { ThemeSelector } from "./theme-selector";
 import { ModeToggle } from "./ui/mode-toogle";
 import Link from "next/link";
 import { useEffect, useState } from "react";

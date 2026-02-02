@@ -164,6 +164,98 @@ function EditUserForm({ user, onUpdate, onOpenChange }: {
     </form>
   )
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ActionsCell({ row, table }: { row: Row<User>; table: any }) {
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDesactivate = async () => {
+    if (!confirm(`Voulez-vous vraiment désactiver l'utilisateur ${row.original.name} ${row.original.firstname} ?`)) return
+    setIsDeleting(true)
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch(buildApiUrl(`/api/users/${row.original.id}/desactivate`), {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Erreur ${response.status}: ${errorData.message || response.statusText}`)
+      }
+
+      const meta = table.options.meta as UserTableMeta
+      meta.updateData(row.index, { ...row.original, status: false })
+      alert("Utilisateur désactivé avec succès.")
+    } catch (error) {
+      console.error("Erreur lors de la désactivation:", error)
+      alert("Échec de la désactivation.")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleUpdateUser = (updatedUser: User) => {
+    const meta = table.options.meta as UserTableMeta
+    meta.updateData(row.index, updatedUser)
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+            size="icon"
+          >
+            <IconDotsVertical />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onSelect={() => setShowEditDialog(true)}>
+            <IconEdit className="mr-2 size-4" />
+            Modifier
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            className="text-destructive"
+            onSelect={handleDesactivate}
+            disabled={isDeleting}
+          >
+            <IconTrash className="mr-2 size-4" />
+            {isDeleting ? "Désactivation..." : "Désactiver"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier l&apos;utilisateur</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de {row.original.name} {row.original.firstname}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <EditUserForm
+            user={row.original}
+            onUpdate={handleUpdateUser}
+            onOpenChange={setShowEditDialog}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
 
 // Colonnes pour la table des utilisateurs
 const columns: ColumnDef<User>[] = [
@@ -226,88 +318,7 @@ const columns: ColumnDef<User>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row, table }) => {
-      const [showEditDialog, setShowEditDialog] = useState(false)
-      const [isDeleting, setIsDeleting] = useState(false)
-
-      const handleDesactivate = async () => {
-        if (!confirm(`Voulez-vous vraiment désactiver l'utilisateur ${row.original.name} ${row.original.firstname} ?`)) return
-        setIsDeleting(true)
-        try {
-          const token = localStorage.getItem("token")
-          const response = await fetch(buildApiUrl(`/api/users/${row.original.id}/desactivate`), {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          })
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}))
-            throw new Error(`Erreur ${response.status}: ${errorData.message || response.statusText}`)
-          }
-          // Mettre à jour l'état local
-          const meta = table.options.meta as UserTableMeta
-          meta.updateData(row.index, { ...row.original, status: false })
-          alert("Utilisateur désactivé avec succès.")
-        } catch (error: unknown) {
-          console.error("Erreur lors de la désactivation de l'utilisateur:", error)
-          alert("Échec de la désactivation de l'utilisateur.")
-        } finally {
-          setIsDeleting(false)
-        }
-      }
-
-      const handleUpdateUser = (updatedUser: User) => {
-        const meta = table.options.meta as UserTableMeta
-        meta.updateData(row.index, updatedUser)
-      }
-
-      return (
-        <>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="data-[state=open]:bg-muted text-muted-foreground flex size-8" size="icon">
-                <IconDotsVertical />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onSelect={() => setShowEditDialog(true)}>
-                <IconEdit className="mr-2 size-4" />
-                Modifier
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-destructive" 
-                onSelect={handleDesactivate}
-                disabled={isDeleting}
-              >
-                <IconTrash className="mr-2 size-4" />
-                {isDeleting ? "Désactivation..." : "Désactiver"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Dialog pour édition */}
-          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Modifier l'utilisateur</DialogTitle>
-                <DialogDescription>
-                  Modifiez les informations de {row.original.name} {row.original.firstname}.
-                </DialogDescription>
-              </DialogHeader>
-              <EditUserForm 
-                user={row.original} 
-                onUpdate={handleUpdateUser}
-                onOpenChange={setShowEditDialog}
-              />
-            </DialogContent>
-          </Dialog>
-        </>
-      )
-    },
+    cell: ({ row, table }) => <ActionsCell row={row} table={table} />,
   },
 ]
 

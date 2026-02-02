@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import Image from "next/image"
-import Masonry from "react-responsive-masonry"
+import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 
 const IMAGES = [
   { src: "/lome/01-marche.jpg", alt: "Marché de Lomé" },
@@ -35,33 +35,32 @@ export default function LomeGallery() {
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
       >
-        <Masonry
-          columnsCountBreakPoints={{ 320: 2, 640: 3, 1024: 5 }}
-          gutter="0.5rem"
-        >
-          {IMAGES.map((img, idx) => (
-            <motion.div
-              key={img.src}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.08 }}
-              whileHover={{ scale: 1.01 }}
-              className="relative rounded-2xl overflow-hidden shadow-lg"
-            >
-              <Image
-                src={img.src}
-                alt={img.alt}
-                width={800}
-                height={600}
-                className="w-full h-auto object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-              <div className="absolute bottom-2 left-3 text-white text-sm font-medium">
-                {img.alt}
-              </div>
-            </motion.div>
-          ))}
-        </Masonry>
+        <ResponsiveMasonry columnsCountBreakPoints={{ 320: 2, 640: 3, 1024: 5 }}>
+          <Masonry gutter="0.5rem">
+            {IMAGES.map((img, idx) => (
+              <motion.div
+                key={img.src}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.08 }}
+                whileHover={{ scale: 1.01 }}
+                className="relative rounded-2xl overflow-hidden shadow-lg"
+              >
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  width={800}
+                  height={600}
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="absolute bottom-2 left-3 text-white text-sm font-medium">
+                  {img.alt}
+                </div>
+              </motion.div>
+            ))}
+          </Masonry>
+        </ResponsiveMasonry>
       </motion.div>
     </section>
   )

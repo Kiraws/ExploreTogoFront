@@ -78,8 +78,9 @@ export default function ProfilePage() {
       }
 
       const filteredData = Object.fromEntries(
-        Object.entries(updateData).filter(([key, value]) => value !== undefined && value !== "")
+        Object.entries(updateData).filter(([ value]) => value !== undefined && value !== "")
       )
+      console.log("Données filtrées:", filteredData) // Débogage
 
       if (Object.keys(filteredData).length === 0) {
         setIsEditing(false)
@@ -102,6 +103,7 @@ export default function ProfilePage() {
       try {
         result = JSON.parse(responseText)
       } catch (parseError) {
+        console.error("Erreur lors de la connexion :", parseError);
         throw new Error("Réponse non valide: " + responseText)
       }
 
