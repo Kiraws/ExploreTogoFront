@@ -16,11 +16,12 @@ export async function GET() {
 
     // Appeler ton API externe avec le token
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/lieux`, {
+      credentials: "include",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       }
-    })
+    });
+
 
     if (!response.ok) {
       throw new Error(`Erreur API: ${response.status}`)
